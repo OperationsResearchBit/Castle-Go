@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Castle Go - Multiplayer Edition</title>
+    <script src="https://jsdelivr.net"></script>
+    <!-- Include Supabase CDN for Multiplayer Sync -->
+    <script src="https://jsdelivr.net"></script>
+    <link rel="stylesheet" href="https://pyscript.net">
+    <script type="module" src="https://pyscript.net"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center p-6">
+
+    <header class="text-center mb-8">
+        <h1 class="text-4xl font-extrabold text-amber-500 tracking-wide">🏰 CASTLE GO: MULTIPLAYER</h1>
+        <p class="text-slate-400 mt-2">Compete with other rulers in real-time production planning!</p>
+    </header>
+
+    <!-- Setup Screen (Hidden after connecting) -->
+    <div id="setup_screen" class="max-w-md w-full bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl mb-6">
+        <h2 class="text-xl font-bold text-amber-400 mb-4">Enter the Realm</h2>
+        <input type="text" id="username_input" placeholder="Enter your King/Queen name" class="w-full p-2 rounded bg-slate-950 text-white border border-slate-700 mb-4">
+        <button onclick="joinGame()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg cursor-pointer">Join Multiplayer Server</button>
+    </div>
+
+    <!-- Main Game Grid (Hidden until connected) -->
+    <main id="game_screen" class="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-3 gap-6 hidden">
+        <!-- Input Panel -->
+        <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
+            <h2 class="text-xl font-bold text-amber-400 mb-4">Your Resource Allocation</h2>
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-1">Workers on Gold Mines:</label>
+                <input type="range" id="gold_workers" min="0" max="10" value="5" class="w-full accent-amber-500">
+            </div>
+            <div class="mb-6">
+                <label class="block text-sm font-medium mb-1">Workers on Lumber Mills:</label>
+                <input type="range" id="wood_workers" min="0" max="10" value="5" class="w-full accent-amber-500">
+            </div>
+            <button py-click="process_turn" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 px-4 rounded-lg cursor-pointer">
+                End Turn & Sync to Cloud
+            </button>
+        </div>
+
+        <!-- Local Dashboard Output -->
+        <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl flex flex-col justify-between">
+            <div>
+                <h2 class="text-xl font-bold text-amber-400 mb-4">Your Castle Stockpile</h2>
+                <div class="space-y-3">
+                    <p class="text-lg">Player Identity: <span id="display_name" class="font-bold text-amber-400">---</span></p>
+                    <p class="text-lg">Current Turn: <span id="display_turn" class="font-bold text-white">1</span></p>
+                    <p class="text-lg">💰 Gold Reservoir: <span id="display_gold" class="font-bold text-yellow-400">100</span></p>
+                    <p class="text-lg">🪵 Wood Inventory: <span id="display_wood" class="font-bold text-orange-400">100</span></p>
+                    <p class="text-lg">⚔️ Trained Soldiers: <span id="display_soldiers" class="font-bold text-red-400">0</span></p>
+                </div>
+            </div>
+            <div id="log" class="mt-4 p-3 bg-slate-950 rounded text-xs font-mono text-emerald-400 h-20 overflow-y-auto">
+                Waiting to join server...
+            </div>
+        </div>
+
+        <!-- Global Real-time Leaderboard -->
+        <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
+            <h2 class="text-xl font-bold text-cyan-400 mb-4">🌍 Live Realm Leaderboard</h2>
+            <div class="text-xs text-slate-400 mb-2 grid grid-cols-4 font-bold border-b border-slate-700 pb-1">
+                <span>Ruler</span><span>Turn</span><span>Resources</span><span>Army Size</span>
+            </div>
+            <div id="leaderboard_list" class="space-y-2 divide-y divide-slate-700 max-h-64 overflow-y-auto">
+                <!-- Live data drops here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- JavaScript Database Handler -->
+    <script>
+        // REPLACE THESE WITH YOUR ACTUAL SUPABASE CREDENTIALS FROM YOUR DASHBOARD SETTINGS
+        const SUPABASE_URL = "https://supabase.co";
+        const SUPABASE_KEY = "your-anon-public-key";
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let activePlayerId = null;
+        let activePlayerName = "";
+
+        async function joinGame() {
+            const name = document.getElementById("username_input").value.trim();
+            if(!name) return alert("Please enter a name!");
+            
+            activePlayerName = name;
+            
+            // Insert player into cloud database
+            const { data, error } = await supabase
+                .from('castle_games')
+                .insert([{ player_name: name, gold: 100, wood: 100, soldiers: 0, turn: 1 }])
+                .select();
+
+            if (error) return alert("Connection failed: " + error.message);
+
+            activePlayerId = data[0].id;
+            document.getElementById("display_name").innerText = name;
+            document.getElementById("setup_screen").classList.add("hidden");
+            document.getElementById("game_screen").classList.remove("hidden");
+            document.getElementById("log").innerText = "Successfully logged into global server!";
+            
+            fetchLeaderboard();
+            listenToRealm();
+        }
+
+        async function fetchLeaderboard() {
+            const { data } = await supabase.from('castle_games').select('*').order('soldiers', { ascending: false });
+            const list = document.getElementById("leaderboard_list");
+            list.innerHTML = "";
+            data.forEach(row => {
+                list.innerHTML += `
+                    <div class="grid grid-cols-4 py-2 text-sm">
+                        <span class="font-bold text-slate-200">${row.player_name}</span>
+                        <span>T-${row.turn}</span>
+                        <span class="text-yellow-500">💰${row.gold} 🪵${row.wood}</span>
+                        <span class="text-red-400 font-bold">⚔️${row.soldiers}</span>
+                    </div>`;
+            });
+        }
+
+        function listenToRealm() {
+            supabase.channel('schema-db-changes')
+            .on('postgres_changes', { event: '*', pattern: 'public', table: 'castle_games' }, () => {
+                fetchLeaderboard();
+            }).subscribe();
+        }
+
+        // Bridge function for Python to push updates to JavaScript
+        async function updateCloudData(turn, gold, wood, soldiers) {
+            if(!activePlayerId) return;
+            await supabase.from('castle_games').update({ turn, gold, wood, soldiers }).eq('id', activePlayerId);
+        }
+    </script>
+
+    <!-- Python Core Math Engine -->
+    <script type="py">
+        from pyscript import document
+        import window
+
+        state = {"turn": 1, "gold": 100, "wood": 100, "soldiers": 0}
+
+        def process_turn(event):
+            gold_w = int(document.querySelector("#gold_workers").value)
+            wood_w = int(document.querySelector("#wood_workers").value)
+            
+            if (gold_w + wood_w) > 10:
+                document.querySelector("#log").innerText = "Error: Allocation exceeds 10 available workers!"
+                return
+
+            gold_generated = gold_w * 15
+            wood_generated = wood_w * 10
+            
+            state["gold"] += gold_generated
+            state["wood"] += wood_generated
+            
+            new_soldiers = min(state["gold"] // 20, state["wood"] // 20)
+            state["soldiers"] += new_soldiers
+            state["gold"] -= (new_soldiers * 20)
+            state["wood"] -= (new_soldiers * 20)
+            state["turn"] += 1
+
+            # Update local user display
+            document.querySelector("#display_turn").innerText = str(state["turn"])
+            document.querySelector("#display_gold").innerText = str(state["gold"])
+            document.querySelector("#display_wood").innerText = str(state["wood"])
+            document.querySelector("#display_soldiers").innerText = str(state["soldiers"])
+            document.querySelector("#log").innerText = f"Turn calculated locally. Syncing stats to database..."
+
+            # Trigger JavaScript Bridge to sync local Python math directly up to Supabase Cloud
+            window.updateCloudData(state["turn"], state["gold"], state["wood"], state["soldiers"])
+    </script>
+</body>
+</html>
