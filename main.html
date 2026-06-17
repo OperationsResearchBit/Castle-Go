@@ -4,144 +4,306 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Castle Go - Tactical Production Master</title>
-    <!-- Tailwind CSS Engine -->
-    <script src="https://jsdelivr.net"></script>
-    <!-- Supabase Core Engine -->
-    <script src="https://jsdelivr.net"></script>
-    <!-- PyScript Framework -->
-    <link rel="stylesheet" href="https://pyscript.net">
-    <script type="module" src="https://pyscript.net"></script>
+    <!-- Tailwind CSS (CDN build) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PyScript core engine + styles -->
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.11.1/core.css">
+    <script type="module" src="https://pyscript.net/releases/2024.11.1/core.js"></script>
+    <!-- Supabase JS client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center p-6 selection:bg-amber-500 selection:text-slate-900">
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col items-center p-6">
 
     <header class="text-center mb-8 max-w-xl">
-        <h1 class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-yellow-300 tracking-wider filter drop-shadow-md">🏰 CASTLE GO</h1>
-        <p class="text-slate-400 mt-2 text-sm uppercase tracking-widest font-semibold">Real-Time Production Planning Sandbox</p>
+        <h1 class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-yellow-300 tracking-wider">🏰 CASTLE GO</h1>
+        <p class="text-gray-400 mt-2 text-sm uppercase tracking-widest font-semibold">Real-Time Production Planning Sandbox</p>
     </header>
 
-    <!-- Setup Login Window -->
-    <div id="setup_screen" class="max-w-md w-full bg-slate-900 p-8 rounded-2xl border-2 border-slate-800 shadow-2xl transition duration-300 hover:border-amber-500/30">
+    <!-- Setup Login Window Container -->
+    <div id="setup_screen" class="max-w-md w-full bg-gray-900 p-8 rounded-2xl border-2 border-gray-800 shadow-2xl transition duration-300 hover:border-amber-500/30">
         <h2 class="text-2xl font-extrabold text-amber-400 mb-6 flex items-center gap-2">⚔️ Claim Your Realm</h2>
-        
+
         <div class="mb-4">
-            <label class="block text-xs font-bold text-slate-400 mb-2 tracking-wider">RULER TITLENAME</label>
-            <input type="text" id="username_input" placeholder="e.g., Arthur" class="w-full p-3 rounded-xl bg-slate-950 text-white border border-slate-800 focus:border-amber-500 focus:outline-none transition font-bold uppercase">
+            <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wider">RULER TITLENAME</label>
+            <input type="text" id="username_input" placeholder="e.g., Arthur" class="w-full p-3 rounded-xl bg-gray-950 text-white border border-gray-800 focus:border-amber-500 focus:outline-none transition font-bold uppercase">
         </div>
-        
+
         <div class="mb-6">
-            <label class="block text-xs font-bold text-slate-400 mb-2 tracking-wider">LOBBY ROOM MATCH CODE (4 LETTERS)</label>
-            <input type="text" id="lobby_input" placeholder="CAMP" maxlength="4" class="w-full p-3 rounded-xl bg-slate-950 text-white border border-slate-800 focus:border-cyan-500 focus:outline-none transition tracking-widest font-mono font-bold uppercase text-center text-xl">
+            <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wider">LOBBY ROOM MATCH CODE (4 LETTERS)</label>
+            <input type="text" id="lobby_input" placeholder="CAMP" maxlength="4" class="w-full p-3 rounded-xl bg-gray-950 text-white border border-gray-800 focus:border-cyan-500 focus:outline-none transition tracking-widest font-mono font-bold uppercase text-center text-xl">
         </div>
-        
-        <button onclick="joinGame()" class="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-black py-4 rounded-xl cursor-pointer shadow-lg shadow-orange-900/40 transform active:scale-98 transition">
+
+        <button onclick="joinGame()" class="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-black py-4 rounded-xl cursor-pointer shadow-lg transition">
             ENTER THE REALM LOBBY
         </button>
     </div>
 
-    <!-- Main Active Workspace -->
-    <main id="game_screen" class="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-3 gap-8 hidden">
-        
+    <!-- Main Active Workspace Grid Map -->
+    <main id="game_screen" class="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-3 gap-8 hidden">
+
         <!-- UI Column 1: Resource Management Sliders -->
-        <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl flex flex-col justify-between">
+        <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl flex flex-col justify-between">
             <div>
-                <div class="border-b border-slate-800 pb-3 mb-6">
+                <div class="border-b border-gray-800 pb-3 mb-6">
                     <h2 class="text-xl font-black text-amber-400 tracking-wide uppercase">Workforce Capacity</h2>
-                    <p class="text-xs text-slate-400">Distribute your 10 available citizens optimally.</p>
+                    <p class="text-xs text-gray-400">Distribute your 10 available citizens optimally.</p>
                 </div>
-                
-                <div class="mb-6 bg-slate-950 p-4 rounded-xl border border-slate-800">
+
+                <div class="mb-6 bg-gray-950 p-4 rounded-xl border border-gray-800">
                     <div class="flex justify-between text-sm font-bold mb-2">
-                        <span class="text-yellow-400 flex items-center gap-1">💰 Gold Mine Crew</span>
+                        <span class="text-yellow-400">💰 Gold Mine Crew</span>
                         <span id="gold_crew_count" class="font-mono bg-yellow-400/10 text-yellow-400 px-2 py-0.5 rounded text-xs">5 Workers</span>
                     </div>
                     <input type="range" id="gold_workers" min="0" max="10" value="5" oninput="document.getElementById('gold_crew_count').innerText = this.value + ' Workers'" class="w-full accent-amber-500 cursor-pointer">
                 </div>
 
-                <div class="mb-6 bg-slate-950 p-4 rounded-xl border border-slate-800">
+                <div class="mb-6 bg-gray-950 p-4 rounded-xl border border-gray-800">
                     <div class="flex justify-between text-sm font-bold mb-2">
-                        <span class="text-orange-400 flex items-center gap-1">🪵 Lumber Mill Crew</span>
+                        <span class="text-orange-400">🪵 Lumber Mill Crew</span>
                         <span id="wood_crew_count" class="font-mono bg-orange-400/10 text-orange-400 px-2 py-0.5 rounded text-xs">5 Workers</span>
                     </div>
                     <input type="range" id="wood_workers" min="0" max="10" value="5" oninput="document.getElementById('wood_crew_count').innerText = this.value + ' Workers'" class="w-full accent-orange-500 cursor-pointer">
                 </div>
             </div>
-            
-            <button py-click="process_turn" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold py-4 px-4 rounded-xl cursor-pointer shadow-lg shadow-emerald-950/50 transition">
+
+            <button py-click="process_turn" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold py-4 px-4 rounded-xl cursor-pointer shadow-lg transition">
                 🚀 CONCLUDE OPERATIONAL TURN
             </button>
         </div>
 
-        <!-- UI Column 2: Enhanced Graphic Frame -->
-        <div class="bg-gradient-to-b from-slate-900 to-slate-950 p-6 rounded-2xl border-2 border-amber-500/20 shadow-2xl flex flex-col items-center justify-between text-center relative overflow-hidden">
-            
+        <!-- UI Column 2: Graphics Evolution Viewport Frame -->
+        <div class="bg-gray-900 p-6 rounded-2xl border-2 border-amber-500/20 shadow-2xl flex flex-col items-center justify-between text-center relative overflow-hidden">
+
             <!-- Floating badge -->
-            <div id="castle_stars" class="absolute top-4 right-4 bg-slate-950/80 border border-amber-400 text-amber-400 text-[10px] font-black px-3 py-1 rounded-full tracking-widest shadow-md">
+            <div id="castle_stars" class="absolute top-4 right-4 bg-gray-950 border border-amber-400 text-amber-400 text-[10px] font-black px-3 py-1 rounded-full tracking-widest shadow-md">
                 ⭐ TIER I OUTPOST
             </div>
 
             <div class="w-full">
-                <h2 id="castle_title" class="text-2xl font-black text-slate-100 uppercase tracking-wide mt-2">Wooden Outpost</h2>
-                <div class="flex justify-center gap-4 text-xs font-mono text-slate-400 mt-1">
-                    <span>👑 <span id="display_name" class="text-slate-300 font-bold">---</span></span>
+                <h2 id="castle_title" class="text-2xl font-black text-gray-100 uppercase tracking-wide mt-2">Wooden Outpost</h2>
+                <div class="flex justify-center gap-4 text-xs font-mono text-gray-400 mt-1">
+                    <span>👑 <span id="display_name" class="text-gray-300 font-bold">---</span></span>
                     <span>🚪 Room: <span id="display_room" class="text-cyan-400 font-bold">---</span></span>
                 </div>
-                
-                <!-- Display Image Shell -->
-                <div class="my-6 w-full h-48 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center relative overflow-hidden group shadow-inner">
-                    <div id="visual_glow" class="absolute inset-0 bg-gradient-to-t from-amber-500/10 to-transparent opacity-40 mix-blend-screen pointer-events-none transition-all duration-500"></div>
-                    <img id="castle_graphic" src="https://unsplash.com" 
-                         alt="Castle State" class="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105 filter brightness-90">
+
+                <!-- Fixed Graphics Viewport Box -->
+                <div class="my-6 w-full h-48 bg-gray-950 rounded-xl border border-gray-800 flex items-center justify-center relative overflow-hidden shadow-inner">
+                    <div id="visual_glow" class="absolute inset-0 bg-gradient-to-t from-amber-500/10 to-transparent opacity-40 pointer-events-none transition-all duration-500"></div>
+                    <img id="castle_graphic" src="https://placehold.co/600x400/1f2937/d1d5db?text=Wooden+Outpost"
+                         alt="Castle State" class="w-full h-full object-cover filter brightness-90">
                 </div>
             </div>
 
-            <!-- Dynamic HUD Grid -->
+            <!-- Dynamic HUD Statistics Grid Component -->
             <div class="w-full grid grid-cols-2 gap-3 text-xs font-mono mb-4">
-                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-left">
-                    <div class="text-slate-500 font-bold uppercase tracking-wider text-[9px]">Gold Stockpile</div>
+                <div class="bg-gray-950 p-3 rounded-xl border border-gray-800 text-left">
+                    <div class="text-gray-500 font-bold uppercase tracking-wider text-[9px]">Gold Stockpile</div>
                     <div class="text-base font-black text-yellow-400 mt-0.5">💰 <span id="display_gold">100</span></div>
                 </div>
-                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-left">
-                    <div class="text-slate-500 font-bold uppercase tracking-wider text-[9px]">Wood Inventory</div>
+                <div class="bg-gray-950 p-3 rounded-xl border border-gray-800 text-left">
+                    <div class="text-gray-500 font-bold uppercase tracking-wider text-[9px]">Wood Inventory</div>
                     <div class="text-base font-black text-orange-400 mt-0.5">🪵 <span id="display_wood">100</span></div>
                 </div>
-                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-left">
-                    <div class="text-slate-500 font-bold uppercase tracking-wider text-[9px]">Garrison Force</div>
+                <div class="bg-gray-950 p-3 rounded-xl border border-gray-800 text-left">
+                    <div class="text-gray-500 font-bold uppercase tracking-wider text-[9px]">Garrison Force</div>
                     <div class="text-base font-black text-red-400 mt-0.5">⚔️ <span id="display_soldiers">0</span></div>
                 </div>
-                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-left">
-                    <div class="text-slate-500 font-bold uppercase tracking-wider text-[9px]">Timeline Cycle</div>
+                <div class="bg-gray-950 p-3 rounded-xl border border-gray-800 text-left">
+                    <div class="text-gray-500 font-bold uppercase tracking-wider text-[9px]">Timeline Cycle</div>
                     <div class="text-base font-black text-purple-400 mt-0.5">⏱️ Turn <span id="display_turn">1</span></div>
                 </div>
             </div>
 
-            <!-- Activity Log -->
-            <div id="log" class="w-full p-3 bg-slate-950 rounded-xl text-left text-[10px] font-mono text-emerald-400 h-14 overflow-y-auto border border-slate-800 shadow-inner">
+            <!-- Activity System Log Feed -->
+            <div id="log" class="w-full p-3 bg-gray-950 rounded-xl text-left text-[10px] font-mono text-emerald-400 h-14 overflow-y-auto border border-gray-800 shadow-inner">
                 Awaiting operational workflow allocation orders...
             </div>
         </div>
 
         <!-- UI Column 3: Global Room Leaderboard -->
-        <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl flex flex-col">
-            <div class="border-b border-slate-800 pb-3 mb-4">
+        <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl flex flex-col">
+            <div class="border-b border-gray-800 pb-3 mb-4">
                 <h2 class="text-xl font-black text-cyan-400 tracking-wide uppercase flex items-center gap-2">🏆 Realm Rankings</h2>
                 <p class="text-xs text-slate-400">Live scoreboard of players in this specific room code.</p>
             </div>
-            
-            <div class="text-[10px] text-slate-500 font-black uppercase tracking-wider mb-2 grid grid-cols-4 font-mono border-b border-slate-800 pb-2">
+
+            <div class="text-[10px] text-gray-500 font-black uppercase tracking-wider mb-2 grid grid-cols-4 font-mono border-b border-gray-800 pb-2">
                 <span>Ruler Name</span><span>Progress</span><span>Stockpiles</span><span class="text-right">Military</span>
             </div>
-            
-            <div id="leaderboard_list" class="space-y-2 divide-y divide-slate-800/60 max-h-80 overflow-y-auto pr-1 font-mono">
-                <!-- Sync loop lists players dynamically -->
+
+            <div id="leaderboard_list" class="space-y-2 divide-y divide-gray-800 max-h-80 overflow-y-auto pr-1 font-mono">
+                <!-- Scoreboard entries load here -->
             </div>
         </div>
     </main>
 
-    <!-- JavaScript Sync Layer -->
+    <!-- ========================================================= -->
+    <!-- JAVASCRIPT LAYER: HANDLES DATABASE COMMUNICATIONS          -->
+    <!-- ========================================================= -->
     <script>
-        // PASTE YOUR EXTRACTED API DETAILS DIRECTLY HERE
-        const SUPABASE_URL = "https://supabase.co";
+        // TODO: replace these with your own Supabase project's URL and anon/public key
+        const SUPABASE_URL = "https://pnwxqyjxjzepbfyhrdpo.supabase.co";
         const SUPABASE_KEY = "sb_publishable_TtfzT97UwdAoPAcN3uxReA_Cbo7wzHe";
 
+        // Named differently from the global `supabase` object the library
+        // attaches to window, so we don't shadow/collide with it.
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        let activePlayerId = null;
+        let activePlayerName = "";
+        let targetLobbyCode = "GLOBAL";
 
+        async function joinGame() {
+            const name = document.getElementById("username_input").value.trim().toUpperCase();
+            const lobby = document.getElementById("lobby_input").value.trim().toUpperCase();
+
+            if (!name || !lobby) return alert("Ruler Name and Lobby Match Code are required fields!");
+
+            activePlayerName = name;
+            targetLobbyCode = lobby;
+
+            const { data, error } = await supabaseClient
+                .from('castle_games')
+                .insert([{ player_name: name, lobby_code: lobby, gold: 100, wood: 100, soldiers: 0, turn: 1 }])
+                .select();
+
+            if (error) return alert("Supabase pipeline rejection: " + error.message);
+
+            activePlayerId = data[0].id;
+
+            document.getElementById("display_name").innerText = name;
+            document.getElementById("display_room").innerText = lobby;
+            document.getElementById("setup_screen").classList.add("hidden");
+            document.getElementById("game_screen").classList.remove("hidden");
+
+            fetchLeaderboard();
+            listenToRealm();
+        }
+
+        async function fetchLeaderboard() {
+            const { data, error } = await supabaseClient
+                .from('castle_games')
+                .select('*')
+                .eq('lobby_code', targetLobbyCode)
+                .order('soldiers', { ascending: false });
+
+            if (error) return;
+
+            const list = document.getElementById("leaderboard_list");
+            list.innerHTML = "";
+
+            data.forEach(row => {
+                let tierSymbol = "🪵";
+                let tierColor = "text-gray-400";
+                if (row.gold >= 1500 && row.soldiers >= 50) {
+                    tierSymbol = "💎";
+                    tierColor = "text-cyan-400 font-extrabold";
+                } else if (row.gold >= 500 && row.soldiers >= 10) {
+                    tierSymbol = "🧱";
+                    tierColor = "text-amber-400 font-bold";
+                }
+
+                list.innerHTML += `
+                    <div class="grid grid-cols-4 py-2 text-xs items-center border-b border-gray-800/40">
+                        <span class="${tierColor} truncate">${tierSymbol} ${row.player_name}</span>
+                        <span class="text-gray-400 font-bold">T-${row.turn}</span>
+                        <span class="text-[10px] text-gray-500 leading-tight">G:${row.gold}<br>W:${row.wood}</span>
+                        <span class="text-red-400 font-black text-right pr-2">⚔️ ${row.soldiers}</span>
+                    </div>`;
+            });
+        }
+
+        function listenToRealm() {
+            supabaseClient.channel('room-updates-' + targetLobbyCode)
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'castle_games',
+                    filter: `lobby_code=eq.${targetLobbyCode}`
+                }, () => {
+                    fetchLeaderboard();
+                }).subscribe();
+        }
+
+        async function updateCloudData(turn, gold, wood, soldiers) {
+            if (!activePlayerId) return;
+            await supabaseClient.from('castle_games').update({ turn, gold, wood, soldiers }).eq('id', activePlayerId);
+        }
+    </script>
+
+    <!-- ========================================================= -->
+    <!-- PYTHON ENGINE LAYER: RUNS CORE PLANNING GAME MATH MAPS    -->
+    <!-- ========================================================= -->
+    <script type="py">
+        from pyscript import document, window
+
+        state = {"turn": 1, "gold": 100, "wood": 100, "soldiers": 0}
+
+        ART_TIER_1 = "https://placehold.co/600x400/1f2937/d1d5db?text=Wooden+Outpost"
+        ART_TIER_2 = "https://placehold.co/600x400/78350f/fbbf24?text=Stone+Bastion"
+        ART_TIER_3 = "https://placehold.co/600x400/164e63/22d3ee?text=Imperial+Citadel"
+
+        def evaluate_castle_evolution():
+            g = state["gold"]
+            s = state["soldiers"]
+
+            img = document.querySelector("#castle_graphic")
+            badge = document.querySelector("#castle_stars")
+            title = document.querySelector("#castle_title")
+            glow = document.querySelector("#visual_glow")
+
+            if g >= 1500 and s >= 50:
+                img.setAttribute("src", ART_TIER_3)
+                badge.innerText = "💎 TIER III CITADEL"
+                badge.className = "absolute top-4 right-4 bg-cyan-500/20 border border-cyan-400 text-cyan-400 text-[10px] font-black px-3 py-1 rounded-full tracking-widest"
+                title.innerText = "Imperial Citadel"
+                title.className = "text-2xl font-black text-cyan-400 uppercase tracking-wide mt-2"
+                glow.className = "absolute inset-0 bg-gradient-to-t from-cyan-500/20 to-transparent opacity-100 mix-blend-screen pointer-events-none"
+            elif g >= 500 and s >= 10:
+                img.setAttribute("src", ART_TIER_2)
+                badge.innerText = "🧱 TIER II FORTRESS"
+                badge.className = "absolute top-4 right-4 bg-amber-500/20 border border-amber-400 text-amber-400 text-[10px] font-black px-3 py-1 rounded-full tracking-widest"
+                title.innerText = "Stone Bastion"
+                title.className = "text-2xl font-black text-amber-400 uppercase tracking-wide mt-2"
+                glow.className = "absolute inset-0 bg-gradient-to-t from-amber-500/20 to-transparent opacity-70 mix-blend-screen pointer-events-none"
+            else:
+                img.setAttribute("src", ART_TIER_1)
+                badge.innerText = "🪵 TIER I OUTPOST"
+                badge.className = "absolute top-4 right-4 bg-gray-950 border border-gray-700 text-gray-400 text-[10px] font-black px-3 py-1 rounded-full tracking-widest"
+                title.innerText = "Wooden Outpost"
+                title.className = "text-2xl font-black text-gray-100 uppercase tracking-wide mt-2"
+                glow.className = "absolute inset-0 bg-gradient-to-t from-amber-500/10 to-transparent opacity-40 mix-blend-screen pointer-events-none"
+
+        def process_turn(event):
+            gold_w = int(document.querySelector("#gold_workers").value)
+            wood_w = int(document.querySelector("#wood_workers").value)
+
+            if (gold_w + wood_w) > 10:
+                document.querySelector("#log").innerText = "⚠️ Operational Capacity Warning: Max 10 total workers allowed!"
+                return
+
+            gold_generated = gold_w * 15
+            wood_generated = wood_w * 10
+
+            state["gold"] += gold_generated
+            state["wood"] += wood_generated
+
+            new_soldiers = min(state["gold"] // 20, state["wood"] // 20)
+            state["soldiers"] += new_soldiers
+            state["gold"] -= (new_soldiers * 20)
+            state["wood"] -= (new_soldiers * 20)
+            state["turn"] += 1
+
+            evaluate_castle_evolution()
+
+            document.querySelector("#display_turn").innerText = str(state["turn"])
+            document.querySelector("#display_gold").innerText = str(state["gold"])
+            document.querySelector("#display_wood").innerText = str(state["wood"])
+            document.querySelector("#display_soldiers").innerText = str(state["soldiers"])
+            document.querySelector("#log").innerText = "Turn successfully calculated. Syncing state matrix to server room..."
+
+            window.updateCloudData(state["turn"], state["gold"], state["wood"], state["soldiers"])
+    </script>
+
+</body>
+</html>
