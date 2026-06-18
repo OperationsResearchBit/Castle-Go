@@ -153,9 +153,18 @@ def ai_take_turn(m, ai_color):
         m.board[target_r][target_c] = ai_color
         m.log = f"AI ({m.players[ai_color]['name']}) advances a knight to claim new ground."
         
-        # Advance turn (check for phase transition)
-        from game_engine import advance_turn_phase1
-        advance_turn_phase1(m)
+        # Advance turn (inline logic - can't import from game_engine in PyScript)
+        mover = m.current_turn
+        other = "W" if mover == "B" else "B"
+        if m.legal_phase1_moves_for(other):
+            m.current_turn = other
+        elif m.legal_phase1_moves_for(mover):
+            m.log += f" {m.players[other]['name']} has no legal moves and passes."
+        else:
+            m.phase = 2
+            m.turn_step = "move"
+            m.log += " No more legal maneuvers for either side. The Battle Phase begins!"
+        
         return True
     
     else:  # Phase 2
@@ -193,9 +202,29 @@ def ai_take_turn(m, ai_color):
                 m.bridges.append([list(cell_a), list(cell_b)])
                 m.log = f"AI builds a bridge, uniting their kingdom."
             
-            # End turn and check for game end
-            from game_engine import end_turn_phase2
-            end_turn_phase2(m)
+            # End turn and check for game end (inline logic)
+            m.turn_step = "move"
+            mover = m.current_turn
+            other = "W" if mover == "B" else "B"
+            if has_any_action(m, other):
+                m.current_turn = other
+            elif has_any_action(m, mover):
+                m.log += f" {m.players[other]['name']} has no legal actions and passes."
+            else:
+                # Finalize game
+                bk = m.count_kingdoms("B")
+                wk = m.count_kingdoms("W")
+                if bk < wk:
+                    m.winner = "B"
+                elif wk < bk:
+                    m.winner = "W"
+                else:
+                    m.winner = "draw"
+                m.log = (
+                    f"No more legal actions remain. Final tally: "
+                    f"{m.players['B']['name']} holds {bk} kingdom(s), "
+                    f"{m.players['W']['name']} holds {wk} kingdom(s)."
+                )
         
         return True
 

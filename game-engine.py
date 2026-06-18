@@ -333,9 +333,8 @@ def trigger_ai_turn():
     if m is None or m.winner or not is_vs_ai or m.current_turn != ai_color:
         return
     
-    # Import and call the AI engine
     try:
-        from ai_engine import ai_take_turn
+        # ai_take_turn is defined in ai-engine.py and available in same namespace
         ai_take_turn(m, ai_color)
         
         if m.winner:
@@ -346,11 +345,14 @@ def trigger_ai_turn():
         # If it's the player's turn now, they can click
         if m.current_turn == my_color:
             document.querySelector("#log").innerText += " → Your turn!"
-        else:
+        elif not m.winner:
             # AI still has moves, schedule next turn
             window.setTimeout(create_proxy(lambda: trigger_ai_turn()), 800)
     except Exception as e:
-        document.querySelector("#log").innerText = f"AI error: {str(e)}"
+        import traceback
+        error_msg = f"AI error: {str(e)}"
+        document.querySelector("#log").innerText = error_msg
+        print(f"AI Exception: {error_msg}")
 
 
 def draw_board():
