@@ -28,6 +28,23 @@ A real-time two-player strategy game: knights build ringforts and kingdoms on a 
 - Game ends when one player captures all enemy knights or no moves remain
 - Winner: player with fewer separate kingdoms (groups of connected ringforts)
 
+--------------------
+
+**Joining a Match (Multiplayer)**
+1. Enter your ruler name and a 4-letter lobby code
+2. First player to enter a code plays Amber throne (moves first)
+3. Second player entering the same code joins as Cyan throne
+4. Moves sync in real-time across both browsers
+5. Hall of Fame tracks wins across all completed matches
+
+**Practice Mode (vs AI)**
+1. Choose "Practice vs AI" on the login screen
+2. Enter your name and pick a color
+3. AI opponent moves automatically with basic strategy
+4. Perfect for learning the rules and testing strategies
+
+--------------------
+
 ## Files
 
 - **index.html** — Layout and UI
