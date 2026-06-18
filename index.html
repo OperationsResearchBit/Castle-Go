@@ -175,8 +175,25 @@
             const playerName = document.getElementById("ai_player_name").value.trim().toUpperCase();
             if (!playerName) return alert("Please enter your name!");
 
+            // Check if Python engine is loaded, retry if not
             if (!window.pyInitAIGame) {
-                return alert("Game engine still loading. Please wait a moment and try again.");
+                const retryBtn = document.querySelector('button[onclick="startAIGame()"]');
+                const originalText = retryBtn.textContent;
+                retryBtn.textContent = "Loading... (wait 2 seconds)";
+                retryBtn.disabled = true;
+                
+                setTimeout(() => {
+                    if (window.pyInitAIGame) {
+                        retryBtn.textContent = originalText;
+                        retryBtn.disabled = false;
+                        startAIGame(); // Retry
+                    } else {
+                        alert("Game engine failed to load. Please refresh the page.");
+                        retryBtn.textContent = originalText;
+                        retryBtn.disabled = false;
+                    }
+                }, 2000);
+                return;
             }
 
             document.getElementById("display_name").innerText = playerName;
@@ -184,12 +201,38 @@
             document.getElementById("setup_screen").classList.add("hidden");
             document.getElementById("game_screen").classList.remove("hidden");
 
-            window.pyInitAIGame(playerName, selectedAIColor);
-            fetchLeaderboard();
-            listenToLeaderboard();
+            try {
+                window.pyInitAIGame(playerName, selectedAIColor);
+                fetchLeaderboard();
+                listenToLeaderboard();
+            } catch (e) {
+                alert("Failed to start game: " + e.message);
+                document.getElementById("setup_screen").classList.remove("hidden");
+                document.getElementById("game_screen").classList.add("hidden");
+            }
         }
     </script>
     <script src="database.js"></script>
+    
+    <script>
+        // Wait for PyScript engines to load, then enhance joinGame
+        function enhanceJoinGame() {
+            if (!window.pyCreateInitialState) {
+                setTimeout(enhanceJoinGame, 100);
+                return;
+            }
+            
+            const originalJoinGame = window.joinGame;
+            window.joinGame = async function() {
+                if (!window.pyCreateInitialState || !window.pyRenderState) {
+                    alert("Game engine loading... please wait a moment and try again.");
+                    return;
+                }
+                return originalJoinGame.call(this);
+            };
+        }
+        enhanceJoinGame();
+    </script>
 
     <!-- Python game engine and AI -->
     <script type="py" src="ai-engine.py"></script>
