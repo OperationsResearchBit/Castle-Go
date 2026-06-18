@@ -1,7 +1,6 @@
 from pyscript import document, window
 from pyodide.ffi import create_proxy
 import json
-import ai-engine.py
 
 KNIGHT_OFFSETS = [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2)]
 SIZE = 9
