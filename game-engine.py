@@ -191,6 +191,8 @@ current_match = None
 my_color = None
 my_name = ""
 selected = None
+is_vs_ai = False
+ai_color = None
 
 
 def handle_phase1_click(m, color, sel, r, c):
@@ -317,8 +319,38 @@ def on_cell_click(r, c):
         if m.winner:
             record_result(m)
         sync_and_render()
+        if is_vs_ai and not m.winner:
+            # Schedule AI turn after a brief delay so user can see the board update
+            window.setTimeout(create_proxy(lambda: trigger_ai_turn()), 800)
     else:
         draw_board()
+
+
+def trigger_ai_turn():
+    """Called when it's the AI's turn. The AI takes its move automatically."""
+    global is_vs_ai
+    m = current_match
+    if m is None or m.winner or not is_vs_ai or m.current_turn != ai_color:
+        return
+    
+    # Import and call the AI engine
+    try:
+        from ai_engine import ai_take_turn
+        ai_take_turn(m, ai_color)
+        
+        if m.winner:
+            record_result(m)
+        
+        sync_and_render()
+        
+        # If it's the player's turn now, they can click
+        if m.current_turn == my_color:
+            document.querySelector("#log").innerText += " → Your turn!"
+        else:
+            # AI still has moves, schedule next turn
+            window.setTimeout(create_proxy(lambda: trigger_ai_turn()), 800)
+    except Exception as e:
+        document.querySelector("#log").innerText = f"AI error: {str(e)}"
 
 
 def draw_board():
@@ -408,5 +440,30 @@ def render_state(state_json, color, name):
     draw_board()
 
 
+def init_ai_game(player_name, player_color):
+    """Initialize a single-player game against AI."""
+    global current_match, my_color, my_name, selected, is_vs_ai, ai_color
+    
+    my_color = player_color
+    my_name = player_name
+    ai_color = "W" if player_color == "B" else "B"
+    is_vs_ai = True
+    selected = None
+    
+    # Create initial state
+    m = Match()
+    m.players["B"]["name"] = player_name if player_color == "B" else "AI Opponent"
+    m.players["W"]["name"] = player_name if player_color == "W" else "AI Opponent"
+    current_match = m
+    
+    document.querySelector("#log").innerText = f"Practice mode: {player_name} vs AI"
+    draw_board()
+    
+    # If AI goes first, schedule its first move
+    if current_match.current_turn == ai_color:
+        window.setTimeout(create_proxy(lambda: trigger_ai_turn()), 1000)
+
+
 window.pyCreateInitialState = create_proxy(create_initial_state)
 window.pyRenderState = create_proxy(render_state)
+window.pyInitAIGame = create_proxy(init_ai_game)

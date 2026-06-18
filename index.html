@@ -23,20 +23,61 @@
     <div id="setup_screen" class="max-w-md w-full bg-gray-900 p-8 rounded-2xl border-2 border-gray-800 shadow-2xl transition duration-300 hover:border-amber-500/30">
         <h2 class="text-2xl font-extrabold text-amber-400 mb-6 flex items-center gap-2">⚔️ Claim Your Realm</h2>
 
-        <div class="mb-4">
-            <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wider">RULER TITLENAME</label>
-            <input type="text" id="username_input" placeholder="e.g., Arthur" class="w-full p-3 rounded-xl bg-gray-950 text-white border border-gray-800 focus:border-amber-500 focus:outline-none transition font-bold uppercase">
+        <!-- Mode Selection -->
+        <div id="mode_select" class="mb-6">
+            <p class="text-xs font-bold text-gray-400 mb-3 tracking-wider">CHOOSE GAME MODE</p>
+            <div class="flex gap-3">
+                <button onclick="selectMode('multiplayer')" id="btn_multiplayer" class="flex-1 py-2 px-3 rounded-lg bg-amber-900/40 border border-amber-600/60 text-amber-300 font-bold text-sm hover:bg-amber-900/60 transition">
+                    👥 Multiplayer
+                </button>
+                <button onclick="selectMode('ai')" id="btn_ai" class="flex-1 py-2 px-3 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 font-bold text-sm hover:bg-gray-700 transition">
+                    🤖 Practice vs AI
+                </button>
+            </div>
         </div>
 
-        <div class="mb-6">
-            <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wider">LOBBY ROOM MATCH CODE (4 LETTERS)</label>
-            <input type="text" id="lobby_input" placeholder="CAMP" maxlength="4" class="w-full p-3 rounded-xl bg-gray-950 text-white border border-gray-800 focus:border-cyan-500 focus:outline-none transition tracking-widest font-mono font-bold uppercase text-center text-xl">
+        <!-- Multiplayer Form -->
+        <div id="multiplayer_form" class="block">
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wider">RULER TITLENAME</label>
+                <input type="text" id="username_input" placeholder="e.g., Arthur" class="w-full p-3 rounded-xl bg-gray-950 text-white border border-gray-800 focus:border-amber-500 focus:outline-none transition font-bold uppercase">
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wider">LOBBY ROOM MATCH CODE (4 LETTERS)</label>
+                <input type="text" id="lobby_input" placeholder="CAMP" maxlength="4" class="w-full p-3 rounded-xl bg-gray-950 text-white border border-gray-800 focus:border-cyan-500 focus:outline-none transition tracking-widest font-mono font-bold uppercase text-center text-xl">
+            </div>
+
+            <button onclick="joinGame()" class="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-black py-4 rounded-xl cursor-pointer shadow-lg transition">
+                ENTER THE REALM LOBBY
+            </button>
+            <p class="text-[10px] text-gray-500 mt-3 text-center">First ruler to enter a lobby code plays as the Amber throne, the second as the Cyan throne.</p>
         </div>
 
-        <button onclick="joinGame()" class="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-black py-4 rounded-xl cursor-pointer shadow-lg transition">
-            ENTER THE REALM LOBBY
-        </button>
-        <p class="text-[10px] text-gray-500 mt-3 text-center">First ruler to enter a lobby code plays as the Amber throne, the second as the Cyan throne.</p>
+        <!-- AI Practice Form -->
+        <div id="ai_form" class="hidden">
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wider">YOUR NAME</label>
+                <input type="text" id="ai_player_name" placeholder="e.g., Arthur" class="w-full p-3 rounded-xl bg-gray-950 text-white border border-gray-800 focus:border-cyan-500 focus:outline-none transition font-bold uppercase">
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wider">PLAY AS</label>
+                <div class="flex gap-3">
+                    <button onclick="selectAIColor('B')" id="btn_amber" class="flex-1 py-2 px-3 rounded-lg bg-amber-900/60 border border-amber-600 text-amber-300 font-bold text-sm">
+                        🟠 Amber
+                    </button>
+                    <button onclick="selectAIColor('W')" id="btn_cyan" class="flex-1 py-2 px-3 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 font-bold text-sm hover:bg-gray-700">
+                        🟦 Cyan
+                    </button>
+                </div>
+            </div>
+
+            <button onclick="startAIGame()" class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black py-4 rounded-xl cursor-pointer shadow-lg transition">
+                START PRACTICE MATCH
+            </button>
+            <p class="text-[10px] text-gray-500 mt-3 text-center">Face off against the AI in a single-player practice match.</p>
+        </div>
     </div>
 
     <!-- Main Active Workspace -->
@@ -92,9 +133,66 @@
     </main>
 
     <!-- Database communications layer -->
+    <script>
+        let currentGameMode = 'multiplayer';
+        let selectedAIColor = 'B';
+
+        function selectMode(mode) {
+            currentGameMode = mode;
+            document.getElementById('multiplayer_form').classList.toggle('hidden', mode !== 'multiplayer');
+            document.getElementById('ai_form').classList.toggle('hidden', mode !== 'ai');
+            document.getElementById('btn_multiplayer').classList.toggle('bg-amber-900/40', mode === 'multiplayer');
+            document.getElementById('btn_multiplayer').classList.toggle('border-amber-600/60', mode === 'multiplayer');
+            document.getElementById('btn_multiplayer').classList.toggle('text-amber-300', mode === 'multiplayer');
+            document.getElementById('btn_multiplayer').classList.toggle('bg-gray-800', mode !== 'multiplayer');
+            document.getElementById('btn_multiplayer').classList.toggle('border-gray-700', mode !== 'multiplayer');
+            document.getElementById('btn_multiplayer').classList.toggle('text-gray-400', mode !== 'multiplayer');
+            document.getElementById('btn_ai').classList.toggle('bg-cyan-900/40', mode === 'ai');
+            document.getElementById('btn_ai').classList.toggle('border-cyan-600/60', mode === 'ai');
+            document.getElementById('btn_ai').classList.toggle('text-cyan-300', mode === 'ai');
+            document.getElementById('btn_ai').classList.toggle('bg-gray-800', mode !== 'ai');
+            document.getElementById('btn_ai').classList.toggle('border-gray-700', mode !== 'ai');
+            document.getElementById('btn_ai').classList.toggle('text-gray-400', mode !== 'ai');
+        }
+
+        function selectAIColor(color) {
+            selectedAIColor = color;
+            document.getElementById('btn_amber').classList.toggle('bg-amber-900/60', color === 'B');
+            document.getElementById('btn_amber').classList.toggle('border-amber-600', color === 'B');
+            document.getElementById('btn_amber').classList.toggle('text-amber-300', color === 'B');
+            document.getElementById('btn_amber').classList.toggle('bg-gray-800', color !== 'B');
+            document.getElementById('btn_amber').classList.toggle('border-gray-700', color !== 'B');
+            document.getElementById('btn_amber').classList.toggle('text-gray-400', color !== 'B');
+            document.getElementById('btn_cyan').classList.toggle('bg-cyan-900/60', color === 'W');
+            document.getElementById('btn_cyan').classList.toggle('border-cyan-600', color === 'W');
+            document.getElementById('btn_cyan').classList.toggle('text-cyan-300', color === 'W');
+            document.getElementById('btn_cyan').classList.toggle('bg-gray-800', color !== 'W');
+            document.getElementById('btn_cyan').classList.toggle('border-gray-700', color !== 'W');
+            document.getElementById('btn_cyan').classList.toggle('text-gray-400', color !== 'W');
+        }
+
+        function startAIGame() {
+            const playerName = document.getElementById("ai_player_name").value.trim().toUpperCase();
+            if (!playerName) return alert("Please enter your name!");
+
+            if (!window.pyInitAIGame) {
+                return alert("Game engine still loading. Please wait a moment and try again.");
+            }
+
+            document.getElementById("display_name").innerText = playerName;
+            document.getElementById("display_room").innerText = "AI PRACTICE";
+            document.getElementById("setup_screen").classList.add("hidden");
+            document.getElementById("game_screen").classList.remove("hidden");
+
+            window.pyInitAIGame(playerName, selectedAIColor);
+            fetchLeaderboard();
+            listenToLeaderboard();
+        }
+    </script>
     <script src="database.js"></script>
 
-    <!-- Python game engine -->
+    <!-- Python game engine and AI -->
+    <script type="py" src="ai-engine.py"></script>
     <script type="py" src="game-engine.py"></script>
 
 </body>
