@@ -9,11 +9,12 @@ to do
 - create game viewer ui on the welcome page
 -  add sound effects
 
+-----------
 
-Directory structure:
-project-folder/
-  ├── index.html
-  ├── database.js
-  └── game-engine.py
+Directory structure:  
+project-folder/  
+  ├── index.html  
+  ├── database.js  
+  └── game-engine.py  
 
   
