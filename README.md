@@ -7,7 +7,7 @@ agpl3 license
 to do
 - add vs ai mode
 - create game viewer ui on the welcome page
--  add sound effects
+-  add sound effects, voiceless, move and selection sounds
 
 # Castle Go  
 A real-time two-player strategy game: knights build ringforts and kingdoms on a 9x9 board.
