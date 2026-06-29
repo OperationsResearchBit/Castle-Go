@@ -8,6 +8,8 @@ to do
 - add vs ai mode
 - create game viewer ui on the welcome page
 -  add sound effects, voiceless, move and selection sounds
+- make into app apk
+- add rules desxription to the game
 
 # Castle Go  
 A real-time two-player strategy game: knights build ringforts and kingdoms on a 9x9 board.
