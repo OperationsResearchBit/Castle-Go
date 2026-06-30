@@ -23,7 +23,7 @@ A real-time two-player strategy game: knights build ringforts and kingdoms on a 
 ## How to Play
 
 
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/L6NrpGfgFSw/0.jpg)](https://www.youtube.com/watch?v=YOUTUBE_VIDEO_ID_HERE)
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/L6NrpGfgFSw/0.jpg)](https://www.youtube.com/watch?v=L6NrpGfgFSw)
 
 
 **Phase 1: Maneuvers** (Building)
