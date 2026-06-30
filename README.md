@@ -22,6 +22,8 @@ A real-time two-player strategy game: knights build ringforts and kingdoms on a 
 
 ## How to Play
 
+[![Watch the video](https://youtu.be/L6NrpGfgFSw)](https://youtu.be)
+
 **Phase 1: Maneuvers** (Building)
 - Click a knight to select it, then click an empty cell to move it
 - Movement follows chess knight rules (L-shape: 2+1)
