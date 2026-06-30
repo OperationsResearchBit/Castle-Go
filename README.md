@@ -10,6 +10,11 @@ to do
 -  add sound effects, voiceless, move and selection sounds
 - make into app apk
 - add rules desxription to the game
+- premium mode
+
+more to do:
+modes- battle royale (MMO), 4 player, 4X strategy castle builder    
+
 
 # Castle Go  
 A real-time two-player strategy game: knights build ringforts and kingdoms on a 9x9 board.
