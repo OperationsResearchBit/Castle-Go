@@ -10,9 +10,18 @@ let lobbyCode = "";
 let lobbyRowId = null;
 let isSpectating = false;
 
+// Premium features: Conquest Mode + Replay viewer session flags
+let inCampaignMode = false;
+let currentCampaignLevel = null;
+let inReplayMode = false;
+
 let matchChannel = null;
 let leaderboardChannel = null;
 let activeGamesChannel = null;
+
+let replaySnapshots = [];
+let replayIndex = 0;
+let replayTimer = null;
 
 function cleanupMatchSubscriptions() {
     if (matchChannel) {
@@ -25,6 +34,19 @@ function cleanupMatchSubscriptions() {
     }
 }
 
+// Called at the top of every "enter a game/viewer" flow so stale state from
+// a previous session (spectating, a campaign level, a replay) never bleeds
+// into the next one.
+function resetSessionFlags() {
+    cleanupMatchSubscriptions();
+    isSpectating = false;
+    inCampaignMode = false;
+    inReplayMode = false;
+    stopReplayPlayback();
+    const rc = document.getElementById("replay_controls");
+    if (rc) rc.classList.add("hidden");
+}
+
 async function joinGame() {
     const name = document.getElementById("username_input").value.trim().toUpperCase();
     const lobby = document.getElementById("lobby_input").value.trim().toUpperCase();
@@ -34,8 +56,12 @@ async function joinGame() {
         return alert("Game engine still loading. Please wait a moment and try again.");
     }
 
-    cleanupMatchSubscriptions();
-    isSpectating = false;
+    resetSessionFlags();
+
+    const mapId = document.getElementById("mp_map_select") ? document.getElementById("mp_map_select").value : "classic";
+    const premium = typeof isPremium === "function" ? isPremium() : false;
+    const colorHex = premium && document.getElementById("mp_color_input") ? document.getElementById("mp_color_input").value : null;
+    const avatar = premium && document.getElementById("mp_avatar_input") ? (document.getElementById("mp_avatar_input").value || null) : null;
 
     const { data: rows, error: selErr } = await supabaseClient
         .from('castle_go_matches')
@@ -47,7 +73,7 @@ async function joinGame() {
     let row;
 
     if (!rows || rows.length === 0) {
-        const initialStateJson = window.pyCreateInitialState(name);
+        const initialStateJson = window.pyCreateInitialState(name, mapId, colorHex, avatar);
         const { data, error } = await supabaseClient
             .from('castle_go_matches')
             .insert([{ lobby_code: lobby, state: JSON.parse(initialStateJson) }])
@@ -64,6 +90,8 @@ async function joinGame() {
             myColor = 'W';
         } else if (!state.players.W.name) {
             state.players.W.name = name;
+            state.players.W.color = colorHex;
+            state.players.W.avatar = avatar;
             const { data, error } = await supabaseClient
                 .from('castle_go_matches')
                 .update({ state: state })
@@ -114,11 +142,36 @@ async function pushState(stateJson) {
     await supabaseClient.from('castle_go_matches').update({ state: JSON.parse(stateJson) }).eq('id', lobbyRowId);
 }
 
+// Saves the match result to the leaderboard, ships the recorded replay to
+// the replays table (Premium: Replays feature), and — if this was a
+// Conquest Mode battle the human player won — marks that level complete.
 async function recordResult(resultJson) {
     const payload = JSON.parse(resultJson);
-    payload.lobby_code = lobbyCode;
+    payload.lobby_code = lobbyCode || (inCampaignMode ? "CONQUEST" : "AI PRACTICE");
+
+    const replay = payload.replay;
+    const mapId = payload.map_id;
+    delete payload.replay;
+    delete payload.map_id;
+
     const { error } = await supabaseClient.from('castle_go_results').insert([payload]);
     if (error) console.error("Could not record result:", error.message);
+
+    if (replay && replay.length > 0) {
+        const { error: replayErr } = await supabaseClient.from('castle_go_replays').insert([{
+            lobby_code: payload.lobby_code,
+            black_name: payload.black_name,
+            white_name: payload.white_name,
+            winner_name: payload.winner_name,
+            map_id: mapId || "classic",
+            snapshots: replay,
+        }]);
+        if (replayErr) console.error("Could not save replay (has the castle_go_replays table been created?):", replayErr.message);
+    }
+
+    if (inCampaignMode && currentCampaignLevel && payload.winner_name === myName) {
+        markCampaignLevelComplete(currentCampaignLevel);
+    }
 }
 
 async function fetchLeaderboard() {
@@ -176,6 +229,10 @@ function leaveGame() {
     cleanupMatchSubscriptions();
     if (window.pyLeaveGame) window.pyLeaveGame();
 
+    stopReplayPlayback();
+    const rc = document.getElementById("replay_controls");
+    if (rc) rc.classList.add("hidden");
+
     isSpectating = false;
     myColor = null;
     myName = "";
@@ -183,9 +240,26 @@ function leaveGame() {
     lobbyRowId = null;
 
     document.getElementById("game_screen").classList.add("hidden");
-    document.getElementById("setup_screen").classList.remove("hidden");
 
-    fetchActiveGames();
+    if (inReplayMode) {
+        inReplayMode = false;
+        document.getElementById("replay_list_screen").classList.remove("hidden");
+    } else if (inCampaignMode) {
+        inCampaignMode = false;
+        currentCampaignLevel = null;
+        document.getElementById("campaign_screen").classList.remove("hidden");
+        if (typeof renderCampaignLevels === "function") renderCampaignLevels();
+    } else {
+        showSetupCards();
+        fetchActiveGames();
+    }
+}
+
+function showSetupCards() {
+    document.getElementById("setup_screen").classList.remove("hidden");
+    document.getElementById("premium_card").classList.remove("hidden");
+    document.getElementById("live_games_card").classList.remove("hidden");
+    if (typeof applyPremiumUI === "function") applyPremiumUI();
 }
 
 async function watchGame(row) {
@@ -193,7 +267,7 @@ async function watchGame(row) {
         return alert("Game engine still loading. Please wait a moment and try again.");
     }
 
-    cleanupMatchSubscriptions();
+    resetSessionFlags();
     isSpectating = true;
     myColor = null;
     myName = "Spectator";
@@ -254,7 +328,11 @@ function buildGamePreviewCard(row) {
         for (let c = 0; c < 9; c++) {
             const px = document.createElement("div");
             const owner = state.board[r][c];
-            px.style.backgroundColor = owner === "B" ? "#f59e0b" : owner === "W" ? "#22d3ee" : "#1f2937";
+            const blocked = (state.blocked || []).some(cell => cell[0] === r && cell[1] === c);
+            px.style.backgroundColor = blocked ? "#334155"
+                : owner === "B" ? (state.players.B.color || "#f59e0b")
+                : owner === "W" ? (state.players.W.color || "#22d3ee")
+                : "#1f2937";
             grid.appendChild(px);
         }
     }
@@ -268,11 +346,11 @@ function buildGamePreviewCard(row) {
 
     const bLine = document.createElement("div");
     bLine.className = "text-[11px] text-amber-300 truncate";
-    bLine.textContent = "🟠 " + (state.players.B.name || "waiting...");
+    bLine.textContent = (state.players.B.avatar || "🟠") + " " + (state.players.B.name || "waiting...");
 
     const wLine = document.createElement("div");
     wLine.className = "text-[11px] text-cyan-300 truncate";
-    wLine.textContent = "🟦 " + (state.players.W.name || "waiting...");
+    wLine.textContent = (state.players.W.avatar || "🟦") + " " + (state.players.W.name || "waiting...");
 
     const phaseLine = document.createElement("div");
     phaseLine.className = "text-[10px] text-gray-500 uppercase tracking-wide";
@@ -298,6 +376,148 @@ function listenToActiveGames() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'castle_go_matches' }, () => {
             fetchActiveGames();
         }).subscribe();
+}
+
+// ============================================================
+// Premium: Replays
+// ============================================================
+
+async function openReplayList() {
+    document.getElementById("setup_screen").classList.add("hidden");
+    document.getElementById("premium_card").classList.add("hidden");
+    document.getElementById("live_games_card").classList.add("hidden");
+    document.getElementById("replay_list_screen").classList.remove("hidden");
+    await fetchReplayList();
+}
+
+function closeReplayListScreen() {
+    document.getElementById("replay_list_screen").classList.add("hidden");
+    showSetupCards();
+}
+
+async function fetchReplayList() {
+    const container = document.getElementById("replay_list");
+    container.innerHTML = '<div class="text-gray-500 text-xs py-3 text-center">Loading replays...</div>';
+
+    const { data, error } = await supabaseClient
+        .from('castle_go_replays')
+        .select('*')
+        .order('finished_at', { ascending: false })
+        .limit(30);
+
+    if (error) {
+        container.innerHTML = '<div class="text-gray-500 text-xs py-3 text-center">Could not load replays. (Has the castle_go_replays table been created?)</div>';
+        return;
+    }
+    if (!data || data.length === 0) {
+        container.innerHTML = '<div class="text-gray-500 text-xs py-3 text-center">No replays saved yet. Finish a match to record one.</div>';
+        return;
+    }
+
+    container.innerHTML = "";
+    data.forEach(row => container.appendChild(buildReplayCard(row)));
+}
+
+function buildReplayCard(row) {
+    const wrap = document.createElement("div");
+    wrap.className = "flex items-center justify-between gap-3 p-3 rounded-lg bg-gray-950 border border-gray-800 hover:border-purple-500/50 transition cursor-pointer";
+    wrap.onclick = () => openReplayViewer(row);
+
+    const info = document.createElement("div");
+    info.className = "min-w-0";
+    const title = document.createElement("div");
+    title.className = "text-xs font-mono text-purple-300 font-bold truncate";
+    title.textContent = row.lobby_code || "Practice";
+    const sub = document.createElement("div");
+    sub.className = "text-[11px] text-gray-400 truncate";
+    sub.textContent = (row.black_name || "?") + " vs " + (row.white_name || "?") + " — winner: " + (row.winner_name || "?");
+    const moves = document.createElement("div");
+    moves.className = "text-[10px] text-gray-600";
+    moves.textContent = ((row.snapshots || []).length) + " moves recorded";
+    info.appendChild(title);
+    info.appendChild(sub);
+    info.appendChild(moves);
+
+    const watchBtn = document.createElement("div");
+    watchBtn.className = "text-[10px] font-bold text-purple-400 uppercase tracking-wider flex-shrink-0";
+    watchBtn.textContent = "▶ Watch";
+
+    wrap.appendChild(info);
+    wrap.appendChild(watchBtn);
+    return wrap;
+}
+
+function openReplayViewer(row) {
+    if (!window.pyWatchMatch) {
+        return alert("Game engine still loading. Please wait a moment and try again.");
+    }
+    replaySnapshots = row.snapshots || [];
+    replayIndex = 0;
+    inReplayMode = true;
+
+    document.getElementById("replay_list_screen").classList.add("hidden");
+    document.getElementById("display_name_prefix").innerText = "Reviewing";
+    document.getElementById("display_name").innerText = (row.black_name || "?") + " vs " + (row.white_name || "?");
+    document.getElementById("display_room").innerText = row.lobby_code || "REPLAY";
+    document.getElementById("game_screen").classList.remove("hidden");
+    document.getElementById("replay_controls").classList.remove("hidden");
+
+    renderReplayFrame();
+}
+
+function renderReplayFrame() {
+    if (!replaySnapshots.length) return;
+    replayIndex = Math.max(0, Math.min(replayIndex, replaySnapshots.length - 1));
+    window.pyWatchMatch(JSON.stringify(replaySnapshots[replayIndex]));
+    document.getElementById("replay_step_label").innerText = `Move ${replayIndex + 1} / ${replaySnapshots.length}`;
+}
+
+function replayStep(delta) {
+    stopReplayPlayback();
+    replayIndex += delta;
+    renderReplayFrame();
+}
+
+function toggleReplayPlay() {
+    const btn = document.getElementById("replay_play_btn");
+    if (replayTimer) {
+        stopReplayPlayback();
+        return;
+    }
+    if (btn) btn.textContent = "⏸ Pause";
+    replayTimer = setInterval(() => {
+        if (replayIndex >= replaySnapshots.length - 1) {
+            stopReplayPlayback();
+            return;
+        }
+        replayIndex += 1;
+        renderReplayFrame();
+    }, 900);
+}
+
+function stopReplayPlayback() {
+    if (replayTimer) {
+        clearInterval(replayTimer);
+        replayTimer = null;
+    }
+    const btn = document.getElementById("replay_play_btn");
+    if (btn) btn.textContent = "▶ Play";
+}
+
+// ============================================================
+// Premium: Quality of Life — full-screen play
+// ============================================================
+
+function toggleFullscreen() {
+    if (typeof isPremium === "function" && !isPremium()) {
+        alert("Full-screen play is a Premium feature. Activate Premium to enable it.");
+        return;
+    }
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+        document.exitFullscreen().catch(() => {});
+    }
 }
 
 fetchActiveGames();
