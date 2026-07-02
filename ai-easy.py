@@ -1,7 +1,7 @@
 import random
 import json
 
-def evaluate_board_position(m, color):
+def evaluate_board_position_easy(m, color):
     """Score a board position for a given color. Higher = better for that color."""
     score = 0
     
@@ -20,7 +20,7 @@ def evaluate_board_position(m, color):
     return score
 
 
-def ai_choose_phase1_move(m, ai_color):
+def ai_choose_phase1_move_easy(m, ai_color):
     """
     Phase 1: Choose a knight move that claims a ringfort.
     Prefer moves that claim more territory and avoid isolation.
@@ -36,13 +36,13 @@ def ai_choose_phase1_move(m, ai_color):
     
     for knight_idx, target_r, target_c in legal_moves:
         # Simulate the move
-        m_copy = simulate_match_state(m)
+        m_copy = simulate_match_state_easy(m)
         pos = m_copy.players[ai_color]["knights"][knight_idx]
         m_copy.players[ai_color]["knights"][knight_idx] = [target_r, target_c]
         m_copy.board[target_r][target_c] = ai_color
         
         # Evaluate the resulting position
-        move_score = evaluate_board_position(m_copy, ai_color)
+        move_score = evaluate_board_position_easy(m_copy, ai_color)
         
         # Slight preference for moves near the center or toward opponent
         distance_from_center = abs(target_r - 4) + abs(target_c - 4)
@@ -59,7 +59,7 @@ def ai_choose_phase1_move(m, ai_color):
     return best_move
 
 
-def ai_choose_phase2_move(m, ai_color):
+def ai_choose_phase2_move_easy(m, ai_color):
     """
     Phase 2: Choose a knight move that attacks or expands territory.
     Prioritize capturing enemy knights, then capturing ringforts, then moving to unclaimed land.
@@ -103,7 +103,7 @@ def ai_choose_phase2_move(m, ai_color):
     return None
 
 
-def ai_choose_phase2_bridge(m, ai_color):
+def ai_choose_phase2_bridge_easy(m, ai_color):
     """
     Phase 2: Choose a bridge to build between adjacent own ringforts.
     Prefer bridges that connect separate kingdoms.
@@ -119,7 +119,7 @@ def ai_choose_phase2_bridge(m, ai_color):
     
     for cell_a, cell_b in legal_pairs:
         # Simulate building the bridge
-        m_copy = simulate_match_state(m)
+        m_copy = simulate_match_state_easy(m)
         m_copy.bridges.append([list(cell_a), list(cell_b)])
         
         # Count kingdoms after bridge
@@ -137,14 +137,14 @@ def ai_choose_phase2_bridge(m, ai_color):
     return best_pair
 
 
-def ai_take_turn(m, ai_color):
+def ai_take_turn_easy(m, ai_color):
     """
     Execute a full AI turn: move a knight and (in phase 2) build a bridge.
     Modifies match state in place.
     Returns True if a move was made, False if no legal moves.
     """
     if m.phase == 1:
-        move = ai_choose_phase1_move(m, ai_color)
+        move = ai_choose_phase1_move_easy(m, ai_color)
         if not move:
             return False
         
@@ -169,7 +169,7 @@ def ai_take_turn(m, ai_color):
     
     else:  # Phase 2
         # Move first
-        move = ai_choose_phase2_move(m, ai_color)
+        move = ai_choose_phase2_move_easy(m, ai_color)
         if not move:
             return False
         
@@ -196,7 +196,7 @@ def ai_take_turn(m, ai_color):
         
         if not m.winner:
             m.turn_step = "bridge"
-            bridge = ai_choose_phase2_bridge(m, ai_color)
+            bridge = ai_choose_phase2_bridge_easy(m, ai_color)
             if bridge:
                 cell_a, cell_b = bridge
                 m.bridges.append([list(cell_a), list(cell_b)])
@@ -229,7 +229,7 @@ def ai_take_turn(m, ai_color):
         return True
 
 
-def simulate_match_state(m):
+def simulate_match_state_easy(m):
     """
     Create a deep copy of the match state for lookahead evaluation.
     """
