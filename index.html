@@ -11,6 +11,8 @@
     <script type="module" src="https://pyscript.net/releases/2024.11.1/core.js"></script>
     <!-- Supabase JS client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Premium entitlement layer (client-side demo — see comments in premium.js) -->
+    <script src="premium.js"></script>
 </head>
 <body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col items-center p-6">
 
@@ -18,6 +20,25 @@
         <h1 class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-yellow-300 tracking-wider">🏰 CASTLE GO</h1>
         <p class="text-gray-400 mt-2 text-sm uppercase tracking-widest font-semibold">Knights · Ringforts · Kingdoms</p>
     </header>
+
+    <!-- Premium status / upsell card -->
+    <div id="premium_card" class="max-w-md w-full bg-gradient-to-r from-purple-950 to-indigo-950 p-5 rounded-2xl border-2 border-purple-700/40 shadow-2xl mb-6">
+        <div class="flex items-center justify-between gap-3">
+            <div>
+                <div class="text-sm font-black text-purple-300 uppercase tracking-wider">💎 Castle Go Premium</div>
+                <div id="premium_status_label" class="text-xs text-gray-400 mt-1">Free Plan</div>
+            </div>
+            <button id="premium_toggle_btn" onclick="togglePremium()" class="text-xs font-bold bg-purple-700 hover:bg-purple-600 text-white px-3 py-2 rounded-lg transition flex-shrink-0">
+                Activate Premium (Demo)
+            </button>
+        </div>
+        <p class="text-[10px] text-gray-500 mt-2">Unlocks expansion maps, custom colors &amp; avatars, full-screen play, an ad-free board, replays, and Conquest Mode.</p>
+    </div>
+
+    <!-- Ad banner placeholder — shown to free players only. Swap for a real ad network snippet. -->
+    <div class="free-only max-w-md w-full text-center text-[10px] text-gray-500 bg-gray-900 border border-dashed border-gray-700 rounded-lg py-2 mb-6">
+        Advertisement — <button onclick="togglePremium()" class="text-purple-400 underline">Go Premium to remove ads</button>
+    </div>
 
     <!-- Setup Login Window Container -->
     <div id="setup_screen" class="max-w-md w-full bg-gray-900 p-8 rounded-2xl border-2 border-gray-800 shadow-2xl transition duration-300 hover:border-amber-500/30">
@@ -46,6 +67,26 @@
             <div class="mb-6">
                 <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wider">LOBBY ROOM MATCH CODE (4 LETTERS)</label>
                 <input type="text" id="lobby_input" placeholder="CAMP" maxlength="4" class="w-full p-3 rounded-xl bg-gray-950 text-white border border-gray-800 focus:border-cyan-500 focus:outline-none transition tracking-widest font-mono font-bold uppercase text-center text-xl">
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wider">MAP <span class="text-purple-400">💎 (used when creating a new lobby)</span></label>
+                <select id="mp_map_select" class="map-select w-full p-2 rounded-xl bg-gray-950 text-white border border-gray-800 text-sm">
+                    <option value="classic">Classic</option>
+                    <option value="twin_rivers" data-premium="true">Twin Rivers</option>
+                    <option value="highland_siege" data-premium="true">Highland Siege</option>
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wider">CUSTOM COLOR <span class="text-purple-400">💎</span></label>
+                <input type="color" id="mp_color_input" class="color-input w-full h-10 rounded-lg bg-gray-950 border border-gray-800 cursor-pointer" value="#f59e0b" disabled onchange="saveColorPref(this.value)">
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wider">AVATAR <span class="text-purple-400">💎</span></label>
+                <div id="mp_avatar_grid"></div>
+                <input type="hidden" id="mp_avatar_input" value="">
             </div>
 
             <button onclick="joinGame()" class="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-black py-4 rounded-xl cursor-pointer shadow-lg transition">
@@ -85,6 +126,26 @@
                 </div>
             </div>
 
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wider">MAP <span class="text-purple-400">💎</span></label>
+                <select id="ai_map_select" class="map-select w-full p-2 rounded-xl bg-gray-950 text-white border border-gray-800 text-sm">
+                    <option value="classic">Classic</option>
+                    <option value="twin_rivers" data-premium="true">Twin Rivers</option>
+                    <option value="highland_siege" data-premium="true">Highland Siege</option>
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wider">CUSTOM COLOR <span class="text-purple-400">💎</span></label>
+                <input type="color" id="ai_color_input" class="color-input w-full h-10 rounded-lg bg-gray-950 border border-gray-800 cursor-pointer" value="#f59e0b" disabled onchange="saveColorPref(this.value)">
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wider">AVATAR <span class="text-purple-400">💎</span></label>
+                <div id="ai_avatar_grid"></div>
+                <input type="hidden" id="ai_avatar_input" value="">
+            </div>
+
             <button onclick="startAIGame()" class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black py-4 rounded-xl cursor-pointer shadow-lg transition">
                 START PRACTICE MATCH
             </button>
@@ -104,6 +165,38 @@
         <p class="text-[10px] text-gray-500 mt-3 text-center">Click a match to watch it live in read-only viewer mode.</p>
     </div>
 
+    <!-- Premium: Replays -->
+    <div id="replays_card" class="premium-only hidden max-w-md w-full bg-gray-900 p-6 rounded-2xl border-2 border-gray-800 shadow-2xl mt-6">
+        <h2 class="text-lg font-extrabold text-purple-400 mb-3 flex items-center gap-2">🎬 Replays</h2>
+        <p class="text-xs text-gray-500 mb-4">Review completed matches move by move.</p>
+        <button onclick="openReplayList()" class="w-full bg-purple-700 hover:bg-purple-600 text-white font-black py-3 rounded-xl transition">Browse Replays</button>
+    </div>
+
+    <!-- Premium: Conquest Mode -->
+    <div id="conquest_card" class="premium-only hidden max-w-md w-full bg-gray-900 p-6 rounded-2xl border-2 border-gray-800 shadow-2xl mt-6">
+        <h2 class="text-lg font-extrabold text-purple-400 mb-3 flex items-center gap-2">⚔️ Conquest Mode</h2>
+        <p class="text-xs text-gray-500 mb-4">Fight through handcrafted siege scenarios against the AI.</p>
+        <button onclick="openCampaignScreen()" class="w-full bg-purple-700 hover:bg-purple-600 text-white font-black py-3 rounded-xl transition">Enter Campaign</button>
+    </div>
+
+    <!-- Conquest Mode: level select -->
+    <div id="campaign_screen" class="hidden max-w-md w-full bg-gray-900 p-8 rounded-2xl border-2 border-purple-700/40 shadow-2xl">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-extrabold text-purple-300 flex items-center gap-2">⚔️ Conquest Mode</h2>
+            <button onclick="closeCampaignScreen()" class="text-xs font-bold text-gray-400 hover:text-amber-400 transition">← Back</button>
+        </div>
+        <div id="campaign_level_list" class="space-y-3"></div>
+    </div>
+
+    <!-- Replays: list of saved matches -->
+    <div id="replay_list_screen" class="hidden max-w-md w-full bg-gray-900 p-8 rounded-2xl border-2 border-purple-700/40 shadow-2xl">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-extrabold text-purple-300 flex items-center gap-2">🎬 Replays</h2>
+            <button onclick="closeReplayListScreen()" class="text-xs font-bold text-gray-400 hover:text-amber-400 transition">← Back</button>
+        </div>
+        <div id="replay_list" class="space-y-2 max-h-96 overflow-y-auto pr-1"></div>
+    </div>
+
     <!-- Main Active Workspace -->
     <main id="game_screen" class="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-3 gap-8 hidden">
 
@@ -117,6 +210,9 @@
                     <div class="text-sm font-mono">
                         <span class="text-gray-500">Room:</span> <span id="display_room" class="text-cyan-400 font-bold">---</span>
                     </div>
+                    <button onclick="toggleFullscreen()" title="Full-screen (Premium)" class="text-xs font-bold text-gray-400 hover:text-cyan-400 transition cursor-pointer">
+                        ⛶
+                    </button>
                     <div id="phase_label" class="text-xs font-black uppercase tracking-widest text-amber-400 bg-gray-950 px-3 py-1 rounded-full border border-amber-500/30">
                         Phase 1: Maneuvers
                     </div>
@@ -135,6 +231,14 @@
 
             <div class="bg-gray-900 p-6 rounded-2xl border-2 border-amber-500/20 shadow-2xl flex flex-col items-center">
                 <div id="grid_board" class="grid grid-cols-9 gap-0.5 bg-gray-950 p-2 rounded-xl border border-gray-800"></div>
+            </div>
+
+            <!-- Premium: Replay playback controls (also reused for spectating step-through) -->
+            <div id="replay_controls" class="hidden w-full p-4 bg-gray-900 rounded-xl border border-purple-700/40 flex items-center justify-between gap-2">
+                <button onclick="replayStep(-1)" class="px-3 py-2 bg-gray-800 rounded-lg text-sm font-bold hover:bg-gray-700 transition">⏮ Prev</button>
+                <button id="replay_play_btn" onclick="toggleReplayPlay()" class="px-4 py-2 bg-purple-700 rounded-lg text-sm font-bold hover:bg-purple-600 transition">▶ Play</button>
+                <button onclick="replayStep(1)" class="px-3 py-2 bg-gray-800 rounded-lg text-sm font-bold hover:bg-gray-700 transition">Next ⏭</button>
+                <span id="replay_step_label" class="text-xs text-gray-400 font-mono ml-2 whitespace-nowrap">Move 0 / 0</span>
             </div>
 
             <div id="log" class="w-full p-4 bg-gray-900 rounded-xl text-left text-xs font-mono text-emerald-400 border border-gray-800 shadow-inner min-h-[3rem]">
@@ -241,8 +345,14 @@
                 return;
             }
 
-            cleanupMatchSubscriptions();
-            isSpectating = false;
+            resetSessionFlags();
+            myName = playerName;
+
+            const mapId = document.getElementById("ai_map_select").value;
+            const premium = typeof isPremium === "function" ? isPremium() : false;
+            const colorHex = premium ? document.getElementById("ai_color_input").value : null;
+            const avatar = premium ? (document.getElementById("ai_avatar_input").value || null) : null;
+
             document.getElementById("display_name_prefix").innerText = "Ruling as";
             document.getElementById("display_name").innerText = playerName;
             document.getElementById("display_room").innerText = "AI PRACTICE";
@@ -250,7 +360,7 @@
             document.getElementById("game_screen").classList.remove("hidden");
 
             try {
-                window.pyInitAIGame(playerName, selectedAIColor, selectedAIMode);
+                window.pyInitAIGame(playerName, selectedAIColor, selectedAIMode, mapId, colorHex, avatar);
                 fetchLeaderboard();
                 listenToLeaderboard();
             } catch (e) {
@@ -258,6 +368,109 @@
                 document.getElementById("setup_screen").classList.remove("hidden");
                 document.getElementById("game_screen").classList.add("hidden");
             }
+        }
+
+        // ============================================================
+        // Premium: Conquest Mode (Themed Campaign)
+        // ------------------------------------------------------------
+        // NOTE: keep this list in sync with MAP_PRESETS / CAMPAIGN_LEVELS
+        // in game-engine.py — the map ids referenced here must exist there.
+        // ============================================================
+        const CAMPAIGN_LEVELS = [
+            {
+                id: "siege_of_ashford",
+                label: "The Siege of Ashford",
+                map: "classic",
+                ai_mode: "easy",
+                briefing: "A young ruler's first battle. Claim the realm and rout the invaders."
+            },
+            {
+                id: "battle_of_twin_rivers",
+                label: "Battle of the Twin Rivers",
+                map: "twin_rivers",
+                ai_mode: "easy",
+                briefing: "The river splits the land in two. Whoever bridges it first commands the field."
+            },
+            {
+                id: "highland_last_stand",
+                label: "The Highland Last Stand",
+                map: "highland_siege",
+                ai_mode: "medium",
+                briefing: "Rocky highlands choke every approach. Outthink a seasoned commander."
+            }
+        ];
+
+        function openCampaignScreen() {
+            document.getElementById("setup_screen").classList.add("hidden");
+            document.getElementById("premium_card").classList.add("hidden");
+            document.getElementById("live_games_card").classList.add("hidden");
+            document.getElementById("campaign_screen").classList.remove("hidden");
+            renderCampaignLevels();
+        }
+
+        function closeCampaignScreen() {
+            document.getElementById("campaign_screen").classList.add("hidden");
+            showSetupCards();
+        }
+
+        function renderCampaignLevels() {
+            const container = document.getElementById("campaign_level_list");
+            container.innerHTML = "";
+            const progress = getCampaignProgress();
+
+            CAMPAIGN_LEVELS.forEach((level, i) => {
+                const unlocked = i === 0 || progress[CAMPAIGN_LEVELS[i - 1].id];
+                const complete = !!progress[level.id];
+
+                const card = document.createElement("div");
+                card.className = "p-4 rounded-xl border " + (unlocked ? "bg-gray-950 border-purple-700/40" : "bg-gray-950/50 border-gray-800 opacity-50");
+
+                const title = document.createElement("div");
+                title.className = "font-bold text-sm " + (complete ? "text-emerald-400" : "text-gray-200");
+                title.textContent = (complete ? "⭐ " : unlocked ? "" : "🔒 ") + level.label;
+
+                const briefing = document.createElement("div");
+                briefing.className = "text-xs text-gray-500 mt-1 mb-3";
+                briefing.textContent = level.briefing;
+
+                card.appendChild(title);
+                card.appendChild(briefing);
+
+                if (unlocked) {
+                    const btn = document.createElement("button");
+                    btn.className = "w-full bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 rounded-lg text-sm transition";
+                    btn.textContent = complete ? "Replay Level" : "Begin Battle";
+                    btn.onclick = () => startCampaignLevel(level);
+                    card.appendChild(btn);
+                }
+
+                container.appendChild(card);
+            });
+        }
+
+        function startCampaignLevel(level) {
+            if (!window.pyInitAIGame) {
+                return alert("Game engine still loading. Please wait a moment and try again.");
+            }
+
+            resetSessionFlags();
+            inCampaignMode = true;
+            currentCampaignLevel = level.id;
+            myName = "COMMANDER";
+
+            document.getElementById("campaign_screen").classList.add("hidden");
+            document.getElementById("display_name_prefix").innerText = "Ruling as";
+            document.getElementById("display_name").innerText = "COMMANDER";
+            document.getElementById("display_room").innerText = level.label.toUpperCase();
+            document.getElementById("game_screen").classList.remove("hidden");
+
+            const premium = typeof isPremium === "function" ? isPremium() : false;
+            const colorHex = premium ? (getSavedColorPref() || null) : null;
+            const avatar = premium ? (getSavedAvatarPref() || null) : null;
+
+            window.pyInitAIGame("COMMANDER", "B", level.ai_mode, level.map, colorHex, avatar);
+            fetchLeaderboard();
+            listenToLeaderboard();
         }
     </script>
     <script src="database.js"></script>
@@ -280,6 +493,16 @@
             };
         }
         enhanceJoinGame();
+
+        // Wire up avatar pickers and premium color prefill, then apply gating
+        buildAvatarGrid('mp_avatar_grid', 'mp_avatar_input');
+        buildAvatarGrid('ai_avatar_grid', 'ai_avatar_input');
+        const savedColor = getSavedColorPref();
+        if (savedColor) {
+            document.getElementById('mp_color_input').value = savedColor;
+            document.getElementById('ai_color_input').value = savedColor;
+        }
+        applyPremiumUI();
     </script>
 
     <!-- Python game engine and AI -->
