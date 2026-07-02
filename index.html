@@ -92,6 +92,18 @@
         </div>
     </div>
 
+    <!-- Live Games / Viewer Mode -->
+    <div id="live_games_card" class="max-w-md w-full bg-gray-900 p-6 rounded-2xl border-2 border-gray-800 shadow-2xl mt-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-extrabold text-cyan-400 flex items-center gap-2">👀 Live Games</h2>
+            <button onclick="fetchActiveGames()" class="text-[10px] text-gray-400 hover:text-cyan-400 font-bold uppercase tracking-wider transition">↻ Refresh</button>
+        </div>
+        <div id="active_games_list" class="space-y-2 max-h-80 overflow-y-auto pr-1">
+            <div class="text-gray-500 text-xs py-3 text-center">Loading live games...</div>
+        </div>
+        <p class="text-[10px] text-gray-500 mt-3 text-center">Click a match to watch it live in read-only viewer mode.</p>
+    </div>
+
     <!-- Main Active Workspace -->
     <main id="game_screen" class="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-3 gap-8 hidden">
 
@@ -99,6 +111,9 @@
         <div class="lg:col-span-2 flex flex-col gap-6">
             <div class="bg-gray-900 p-5 rounded-2xl border border-gray-800 shadow-xl">
                 <div class="flex justify-between items-center mb-3">
+                    <button onclick="leaveGame()" class="text-xs font-bold text-gray-400 hover:text-amber-400 transition flex items-center gap-1 cursor-pointer">
+                        ← Back
+                    </button>
                     <div class="text-sm font-mono">
                         <span class="text-gray-500">Room:</span> <span id="display_room" class="text-cyan-400 font-bold">---</span>
                     </div>
@@ -114,7 +129,7 @@
                     Awaiting rulers...
                 </div>
                 <div class="text-center text-xs text-gray-500 mt-1">
-                    Ruling as <span id="display_name" class="text-gray-300 font-bold">---</span>
+                    <span id="display_name_prefix">Ruling as</span> <span id="display_name" class="text-gray-300 font-bold">---</span>
                 </div>
             </div>
 
@@ -226,6 +241,9 @@
                 return;
             }
 
+            cleanupMatchSubscriptions();
+            isSpectating = false;
+            document.getElementById("display_name_prefix").innerText = "Ruling as";
             document.getElementById("display_name").innerText = playerName;
             document.getElementById("display_room").innerText = "AI PRACTICE";
             document.getElementById("setup_screen").classList.add("hidden");

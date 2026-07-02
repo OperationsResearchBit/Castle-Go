@@ -193,6 +193,7 @@ my_name = ""
 selected = None
 is_vs_ai = False
 ai_color = None
+is_spectator = False
 ai_mode = "easy"  # "easy" | "medium", set via pySetAIMode
 
 
@@ -322,7 +323,7 @@ def record_result(m):
 def on_cell_click(r, c):
     global selected
     m = current_match
-    if m is None or m.winner:
+    if m is None or m.winner or is_spectator:
         return
     if m.current_turn != my_color:
         document.querySelector("#log").innerText = "Hold — it's not your turn yet."
@@ -437,7 +438,8 @@ def update_hud():
         step = ""
         if m.phase == 2:
             step = " — move a knight" if m.turn_step == "move" else " — build a bridge"
-        turn_label.innerText = f"{whose} turn{step}"
+        suffix = " (spectating)" if is_spectator else ""
+        turn_label.innerText = f"{whose} turn{step}{suffix}"
         turn_label.className = "text-center text-lg font-extrabold text-emerald-400"
 
 
@@ -453,23 +455,50 @@ def create_initial_state(name):
 
 
 def render_state(state_json, color, name):
-    global current_match, my_color, my_name, selected
+    global current_match, my_color, my_name, selected, is_spectator
     my_color = color
     my_name = name
+    selected = None
+    is_spectator = False
+    current_match = Match.from_dict(json.loads(state_json))
+    draw_board()
+
+
+def watch_match(state_json):
+    """Enter read-only viewer mode for an ongoing match."""
+    global current_match, my_color, my_name, selected, is_vs_ai, ai_color, is_spectator
+    my_color = None
+    my_name = "Spectator"
+    is_vs_ai = False
+    ai_color = None
+    is_spectator = True
     selected = None
     current_match = Match.from_dict(json.loads(state_json))
     draw_board()
 
 
+def leave_game():
+    """Reset all session state when the player backs out to the setup screen."""
+    global current_match, my_color, my_name, selected, is_vs_ai, ai_color, is_spectator
+    current_match = None
+    my_color = None
+    my_name = ""
+    selected = None
+    is_vs_ai = False
+    ai_color = None
+    is_spectator = False
+
+
 def init_ai_game(player_name, player_color, mode="easy"):
     """Initialize a single-player game against AI."""
-    global current_match, my_color, my_name, selected, is_vs_ai, ai_color
+    global current_match, my_color, my_name, selected, is_vs_ai, ai_color, is_spectator
 
     set_ai_mode(mode)
     my_color = player_color
     my_name = player_name
     ai_color = "W" if player_color == "B" else "B"
     is_vs_ai = True
+    is_spectator = False
     selected = None
     
     # Create initial state
@@ -490,3 +519,5 @@ window.pyCreateInitialState = create_proxy(create_initial_state)
 window.pyRenderState = create_proxy(render_state)
 window.pyInitAIGame = create_proxy(init_ai_game)
 window.pySetAIMode = create_proxy(set_ai_mode)
+window.pyWatchMatch = create_proxy(watch_match)
+window.pyLeaveGame = create_proxy(leave_game)
