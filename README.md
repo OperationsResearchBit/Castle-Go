@@ -5,7 +5,7 @@ https://operationsresearchbit.github.io/Castle-Go/
 agpl3 license
 
 to do
-- add vs ai mode
+- add vs ai medium/hard mode
 - create game viewer ui on the welcome page
 -  add sound effects, voiceless, move and selection sounds
 - make into app apk
