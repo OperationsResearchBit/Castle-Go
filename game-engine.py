@@ -193,6 +193,26 @@ my_name = ""
 selected = None
 is_vs_ai = False
 ai_color = None
+ai_mode = "easy"  # "easy" | "medium", set via pySetAIMode
+
+
+def set_ai_mode(mode):
+    """Called from JS when the player picks a difficulty on the setup screen."""
+    global ai_mode
+    if mode in ("easy", "medium"):
+        ai_mode = mode
+
+
+def run_ai_turn(m, color):
+    """Dispatch to the selected difficulty's AI implementation.
+
+    ai_easy.py and ai_medium.py both load into this same global namespace,
+    so each of their functions was renamed with an _easy / _medium suffix
+    to avoid one silently overwriting the other.
+    """
+    if ai_mode == "medium":
+        return ai_take_turn_medium(m, color)
+    return ai_take_turn_easy(m, color)
 
 
 def handle_phase1_click(m, color, sel, r, c):
@@ -334,8 +354,7 @@ def trigger_ai_turn():
         return
     
     try:
-        # ai_take_turn is defined in ai-engine.py and available in same namespace
-        ai_take_turn(m, ai_color)
+        run_ai_turn(m, ai_color)
         
         if m.winner:
             record_result(m)
@@ -442,10 +461,11 @@ def render_state(state_json, color, name):
     draw_board()
 
 
-def init_ai_game(player_name, player_color):
+def init_ai_game(player_name, player_color, mode="easy"):
     """Initialize a single-player game against AI."""
     global current_match, my_color, my_name, selected, is_vs_ai, ai_color
-    
+
+    set_ai_mode(mode)
     my_color = player_color
     my_name = player_name
     ai_color = "W" if player_color == "B" else "B"
@@ -469,3 +489,4 @@ def init_ai_game(player_name, player_color):
 window.pyCreateInitialState = create_proxy(create_initial_state)
 window.pyRenderState = create_proxy(render_state)
 window.pyInitAIGame = create_proxy(init_ai_game)
+window.pySetAIMode = create_proxy(set_ai_mode)

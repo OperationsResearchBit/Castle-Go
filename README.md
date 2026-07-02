@@ -15,11 +15,6 @@ to do
 more to do:
 modes- battle royale (MMO), 4 player, 4X strategy castle builder    
 
-premium-mode planned: 
-Expansions and Maps: Unlocks access to game expansions (such as Maps & Knights) and custom game maps. 
-Player Colors & Avatars: Allows advanced color customization and personal avatars across game sessions. 
-Quality of Life: Enables full-screen gameplay and removes advertisements. 
-Replays: Grants full access to game replays to review strategies. 
 
 # Castle Go  
 A real-time two-player strategy game: knights build ringforts and kingdoms on a 9x9 board.
