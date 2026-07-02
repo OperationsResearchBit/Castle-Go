@@ -5,22 +5,20 @@ https://operationsresearchbit.github.io/Castle-Go/
 agpl3 license
 
 to do
-- add vs ai medium/hard mode
+- add vs ai hard mode
 - create game viewer ui on the welcome page
 -  add sound effects, voiceless, move and selection sounds
 - make into app apk
-- add rules desxription to the game
-- premium mode
+- add rules description to the game
+- add paid to the DEMO Premium mode
 
 more to do:
 modes- battle royale (MMO), 4 player, 4X strategy castle builder    
 
 premium-mode planned: </br>
-Expansions and Maps: Unlocks access to game expansions (such as Maps & Knights) and custom game maps. </br>
-Player Colors & Avatars: Allows advanced color customization and personal avatars across game sessions. </br>
-Quality of Life: Enables full-screen gameplay and removes advertisements. </br>
-Replays: Grants full access to game replays to review strategies. 
-
+purchase and earn in-game currency, purchase avatars with in-game currency </br>
+member mode to earn more from each game </br>
+save 3 replays, download saved or the last replay  
 
 # Castle Go  
 A real-time two-player strategy game: knights build ringforts and kingdoms on a 9x9 board.
