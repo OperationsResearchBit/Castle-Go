@@ -198,30 +198,52 @@
         }
 
         function togglePremium() {
-            alert('Premium features toggled (demo mode)');
+            // Open the payment widget modal/checkout
+            if (typeof PaymentWidget !== 'undefined' && PaymentWidget.openCheckout) {
+                PaymentWidget.openCheckout();
+            } else {
+                alert('Payment widget is loading... Please wait a moment and try again.');
+            }
         }
 
         // Default to multiplayer
         selectMode('multiplayer');
 
         // Initialize Payment Widget with Stripe config
-        if (typeof PaymentWidget !== 'undefined' && window.STRIPE_CONFIG) {
-            PaymentWidget.init({
-                gameId: window.STRIPE_CONFIG.gameId,
-                gameName: window.STRIPE_CONFIG.gameName,
-                publishableKey: window.STRIPE_CONFIG.publishableKey,
-                features: window.STRIPE_CONFIG.paymentWidgetConfig.features,
-                container: window.STRIPE_CONFIG.paymentWidgetConfig.container,
-                onSuccess: (purchase) => {
-                    console.log('Purchase successful:', purchase);
-                    updatePremiumStatus();
-                    window.STRIPE_CONFIG.onPaymentSuccess(purchase);
-                },
-                onError: (error) => {
-                    console.error('Payment error:', error);
-                    window.STRIPE_CONFIG.onPaymentError(error);
+        function initializePaymentWidget() {
+            if (typeof PaymentWidget !== 'undefined' && window.STRIPE_CONFIG) {
+                console.log('Initializing PaymentWidget for:', window.STRIPE_CONFIG.gameId);
+                try {
+                    PaymentWidget.init({
+                        gameId: window.STRIPE_CONFIG.gameId,
+                        gameName: window.STRIPE_CONFIG.gameName,
+                        publishableKey: window.STRIPE_CONFIG.publishableKey,
+                        features: window.STRIPE_CONFIG.paymentWidgetConfig.features,
+                        container: window.STRIPE_CONFIG.paymentWidgetConfig.container,
+                        onSuccess: (purchase) => {
+                            console.log('Purchase successful:', purchase);
+                            updatePremiumStatus();
+                            window.STRIPE_CONFIG.onPaymentSuccess(purchase);
+                        },
+                        onError: (error) => {
+                            console.error('Payment error:', error);
+                            window.STRIPE_CONFIG.onPaymentError(error);
+                        }
+                    });
+                } catch (e) {
+                    console.error('PaymentWidget init error:', e);
                 }
-            });
+            } else {
+                console.warn('PaymentWidget not ready yet, retrying in 1s...');
+                setTimeout(initializePaymentWidget, 1000);
+            }
+        }
+        
+        // Initialize when ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializePaymentWidget);
+        } else {
+            initializePaymentWidget();
         }
 
         function updatePremiumStatus() {
