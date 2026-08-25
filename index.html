@@ -13,8 +13,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Payment Widget Integration -->
     <script src="https://operationsresearchbit.github.io/PaymentsCart/payment-widget.js"></script>
-    <!-- Premium entitlement layer (client-side demo — see comments in premium.js) -->
-    <script src="premium.js?v=20260702T2215"></script>
 </head>
 <body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col items-center p-6">
 
@@ -40,7 +38,7 @@
         <p class="text-[10px] text-gray-500 mt-2">Unlocks expansion maps, custom colors &amp; avatars, full-screen play, an ad-free board, replays, and Conquest Mode.</p>
     </div>
 
-    <!-- Ad banner placeholder — shown to free players only. Swap for a real ad network snippet. -->
+    <!-- Ad banner placeholder — shown to free players only -->
     <div class="free-only max-w-md w-full text-center text-[10px] text-gray-500 bg-gray-900 border border-dashed border-gray-700 rounded-lg py-2 mb-6">
         Advertisement — <button onclick="togglePremium()" class="text-purple-400 underline">Go Premium to remove ads</button>
     </div>
@@ -65,36 +63,16 @@
         <!-- Multiplayer Form -->
         <div id="multiplayer_form" class="block">
             <div class="mb-4">
-                <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wider">RULER TITLE NAME</label>
-                <input type="text" id="username_input" placeholder="e.g., Arthur" class="w-full p-3 rounded-xl bg-gray-950 text-white border border-gray-800 focus:border-amber-500 focus:outline-none">
+                <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wider">RULER TITLENAME</label>
+                <input type="text" id="username_input" placeholder="e.g., Arthur" class="w-full p-3 rounded-xl bg-gray-950 text-white border border-gray-800 focus:border-amber-500 focus:outline-none transition font-bold uppercase">
             </div>
 
             <div class="mb-6">
                 <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wider">LOBBY ROOM MATCH CODE (4 LETTERS)</label>
-                <input type="text" id="lobby_input" placeholder="CAMP" maxlength="4" class="w-full p-3 rounded-xl bg-gray-950 text-white border border-gray-800 focus:border-cyan-500 focus:outline-none">
+                <input type="text" id="lobby_input" placeholder="CAMP" maxlength="4" class="w-full p-3 rounded-xl bg-gray-950 text-white border border-gray-800 focus:border-cyan-500 focus:outline-none transition tracking-widest font-mono font-bold uppercase text-center text-xl">
             </div>
 
-            <div class="mb-4">
-                <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wider">MAP <span class="text-purple-400">💎 (used when creating a new lobby)</span></label>
-                <select id="mp_map_select" class="map-select w-full p-2 rounded-xl bg-gray-950 text-white border border-gray-800 text-sm">
-                    <option value="classic">Classic</option>
-                    <option value="twin_rivers" data-premium="true">Twin Rivers</option>
-                    <option value="highland_siege" data-premium="true">Highland Siege</option>
-                </select>
-            </div>
-
-            <div class="mb-4">
-                <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wider">CUSTOM COLOR <span class="text-purple-400">💎</span></label>
-                <input type="color" id="mp_color_input" class="color-input w-full h-10 rounded-lg bg-gray-950 border border-gray-800 cursor-pointer" value="#f59e0b" disabled>
-            </div>
-
-            <div class="mb-6">
-                <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wider">AVATAR <span class="text-purple-400">💎</span></label>
-                <div id="mp_avatar_grid"></div>
-                <input type="hidden" id="mp_avatar_input" value="">
-            </div>
-
-            <button onclick="joinGame()" class="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-black py-4 rounded-xl cursor-pointer shadow-xl transition">
+            <button onclick="joinGame()" class="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-black py-4 rounded-xl cursor-pointer shadow-lg transition">
                 ENTER THE REALM LOBBY
             </button>
             <p class="text-[10px] text-gray-500 mt-3 text-center">First ruler to enter a lobby code plays as the Amber throne, the second as the Cyan throne.</p>
@@ -104,95 +82,158 @@
         <div id="ai_form" class="hidden">
             <div class="mb-4">
                 <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wider">YOUR NAME</label>
-                <input type="text" id="ai_name_input" placeholder="e.g., Champion" class="w-full p-3 rounded-xl bg-gray-950 text-white border border-gray-800 focus:border-cyan-500 focus:outline-none">
+                <input type="text" id="ai_player_name" placeholder="e.g., Arthur" class="w-full p-3 rounded-xl bg-gray-950 text-white border border-gray-800 focus:border-cyan-500 focus:outline-none transition font-bold uppercase">
             </div>
 
-            <div class="mb-4">
-                <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wider">DIFFICULTY</label>
-                <select id="ai_difficulty_select" class="w-full p-2 rounded-xl bg-gray-950 text-white border border-gray-800 text-sm">
-                    <option value="easy">Easy</option>
-                    <option value="normal" selected>Normal</option>
-                    <option value="hard">Hard</option>
-                </select>
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-gray-400 mb-2 tracking-wider">PLAY AS</label>
+                <div class="flex gap-3">
+                    <button onclick="selectAIColor('B')" id="btn_amber" class="flex-1 py-2 px-3 rounded-lg bg-amber-900/60 border border-amber-600 text-amber-300 font-bold text-sm">
+                        🟠 Amber
+                    </button>
+                    <button onclick="selectAIColor('W')" id="btn_cyan" class="flex-1 py-2 px-3 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 font-bold text-sm hover:bg-gray-700">
+                        🟦 Cyan
+                    </button>
+                </div>
             </div>
 
-            <button onclick="joinAI()" class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black py-4 rounded-xl cursor-pointer shadow-xl transition">
+            <button onclick="startAIGame()" class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black py-4 rounded-xl cursor-pointer shadow-lg transition">
                 START PRACTICE MATCH
             </button>
+            <p class="text-[10px] text-gray-500 mt-3 text-center">Face off against the AI in a single-player practice match.</p>
         </div>
     </div>
 
-    <!-- Game Board Container (hidden until game starts) -->
-    <div id="game_board" class="hidden max-w-2xl w-full mt-6">
-        <div id="board_content"></div>
-    </div>
+    <!-- Main Active Workspace -->
+    <main id="game_screen" class="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-3 gap-8 hidden">
 
+        <!-- Match column -->
+        <div class="lg:col-span-2 flex flex-col gap-6">
+            <div class="bg-gray-900 p-5 rounded-2xl border border-gray-800 shadow-xl">
+                <div class="flex justify-between items-center mb-3">
+                    <div class="text-sm font-mono">
+                        <span class="text-gray-500">Room:</span> <span id="display_room" class="text-cyan-400 font-bold">---</span>
+                    </div>
+                    <div id="phase_label" class="text-xs font-black uppercase tracking-widest text-amber-400 bg-gray-950 px-3 py-1 rounded-full border border-amber-500/30">
+                        Phase 1: Maneuvers
+                    </div>
+                </div>
+                <div class="flex justify-between text-xs font-mono mb-3">
+                    <span class="px-2 py-1 rounded bg-amber-900/30 border border-amber-600/40 text-amber-300 font-bold" id="black_name_label">Amber Throne: ---</span>
+                    <span class="px-2 py-1 rounded bg-cyan-900/30 border border-cyan-600/40 text-cyan-300 font-bold" id="white_name_label">Cyan Throne: ---</span>
+                </div>
+                <div id="turn_label" class="text-center text-lg font-extrabold text-emerald-400">
+                    Awaiting rulers...
+                </div>
+                <div class="text-center text-xs text-gray-500 mt-1">
+                    Ruling as <span id="display_name" class="text-gray-300 font-bold">---</span>
+                </div>
+            </div>
+
+            <div class="bg-gray-900 p-6 rounded-2xl border-2 border-amber-500/20 shadow-2xl flex flex-col items-center">
+                <div id="grid_board" class="grid grid-cols-9 gap-0.5 bg-gray-950 p-2 rounded-xl border border-gray-800"></div>
+            </div>
+
+            <div id="log" class="w-full p-4 bg-gray-900 rounded-xl text-left text-xs font-mono text-emerald-400 border border-gray-800 shadow-inner min-h-[3rem]">
+                Awaiting the call to arms...
+            </div>
+        </div>
+
+        <!-- Hall of Fame -->
+        <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl flex flex-col">
+            <div class="border-b border-gray-800 pb-3 mb-4">
+                <h2 class="text-xl font-black text-cyan-400 tracking-wide uppercase flex items-center gap-2">🏆 Hall of Fame</h2>
+                <p class="text-xs text-slate-400">Wins across every completed match, all lobbies.</p>
+            </div>
+
+            <div class="text-[10px] text-gray-500 font-black uppercase tracking-wider mb-2 grid grid-cols-3 font-mono border-b border-gray-800 pb-2">
+                <span>Ruler</span><span class="text-right">Wins</span><span class="text-right">Played</span>
+            </div>
+
+            <div id="leaderboard_list" class="space-y-2 divide-y divide-gray-800 max-h-96 overflow-y-auto pr-1 font-mono text-xs">
+                <div class="text-gray-500 py-3 text-center">No completed matches yet.</div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Mode selection and payment setup -->
     <script>
-        // Initialize Payment Widget
-        PaymentWidget.init({
-            gameId: 'castle-go',
-            gameName: 'Castle-Go',
-            features: ['premium_pass', 'battle_pass', 'supporter'],
-            container: '#payment-widget-container',
-            onSuccess: (purchase) => {
-                console.log('Castle-Go purchase:', purchase);
-                // Unlock premium features
-                if (PaymentWidget.verify('premium_pass').valid) {
-                    enablePremiumMaps();
-                    enableCustomColors();
-                    enableAvatars();
-                }
-            }
-        });
-
-        // Game state
-        let gameMode = null;
-        let username = '';
+        let currentGameMode = 'multiplayer';
+        let selectedAIColor = 'B';
 
         function selectMode(mode) {
-            gameMode = mode;
-            document.getElementById('btn_multiplayer').classList.toggle('bg-amber-900/40', mode === 'multiplayer');
-            document.getElementById('btn_multiplayer').classList.toggle('bg-gray-800', mode !== 'multiplayer');
-            document.getElementById('btn_ai').classList.toggle('bg-cyan-900/40', mode === 'ai');
-            document.getElementById('btn_ai').classList.toggle('bg-gray-800', mode !== 'ai');
-
+            currentGameMode = mode;
             document.getElementById('multiplayer_form').classList.toggle('hidden', mode !== 'multiplayer');
             document.getElementById('ai_form').classList.toggle('hidden', mode !== 'ai');
+            document.getElementById('btn_multiplayer').classList.toggle('bg-amber-900/40', mode === 'multiplayer');
+            document.getElementById('btn_multiplayer').classList.toggle('border-amber-600/60', mode === 'multiplayer');
+            document.getElementById('btn_multiplayer').classList.toggle('text-amber-300', mode === 'multiplayer');
+            document.getElementById('btn_multiplayer').classList.toggle('bg-gray-800', mode !== 'multiplayer');
+            document.getElementById('btn_multiplayer').classList.toggle('border-gray-700', mode !== 'multiplayer');
+            document.getElementById('btn_multiplayer').classList.toggle('text-gray-400', mode !== 'multiplayer');
+            document.getElementById('btn_ai').classList.toggle('bg-cyan-900/40', mode === 'ai');
+            document.getElementById('btn_ai').classList.toggle('border-cyan-600/60', mode === 'ai');
+            document.getElementById('btn_ai').classList.toggle('text-cyan-300', mode === 'ai');
+            document.getElementById('btn_ai').classList.toggle('bg-gray-800', mode !== 'ai');
+            document.getElementById('btn_ai').classList.toggle('border-gray-700', mode !== 'ai');
+            document.getElementById('btn_ai').classList.toggle('text-gray-400', mode !== 'ai');
         }
 
-        function enablePremiumMaps() {
-            const premiumOptions = document.querySelectorAll('[data-premium="true"]');
-            premiumOptions.forEach(opt => opt.disabled = false);
-        }
-
-        function enableCustomColors() {
-            document.getElementById('mp_color_input').disabled = false;
-        }
-
-        function enableAvatars() {
-            // Unlock avatar selection
-            console.log('Avatars unlocked with premium');
+        function selectAIColor(color) {
+            selectedAIColor = color;
+            document.getElementById('btn_amber').classList.toggle('bg-amber-900/60', color === 'B');
+            document.getElementById('btn_amber').classList.toggle('border-amber-600', color === 'B');
+            document.getElementById('btn_amber').classList.toggle('text-amber-300', color === 'B');
+            document.getElementById('btn_amber').classList.toggle('bg-gray-800', color !== 'B');
+            document.getElementById('btn_amber').classList.toggle('border-gray-700', color !== 'B');
+            document.getElementById('btn_amber').classList.toggle('text-gray-400', color !== 'B');
+            document.getElementById('btn_cyan').classList.toggle('bg-cyan-900/60', color === 'W');
+            document.getElementById('btn_cyan').classList.toggle('border-cyan-600', color === 'W');
+            document.getElementById('btn_cyan').classList.toggle('text-cyan-300', color === 'W');
+            document.getElementById('btn_cyan').classList.toggle('bg-gray-800', color !== 'W');
+            document.getElementById('btn_cyan').classList.toggle('border-gray-700', color !== 'W');
+            document.getElementById('btn_cyan').classList.toggle('text-gray-400', color !== 'W');
         }
 
         function togglePremium() {
             alert('Premium features toggled (demo mode)');
         }
 
-        function joinGame() {
-            username = document.getElementById('username_input').value;
-            if (!username) { alert('Enter a name'); return; }
-            alert(`Joining multiplayer as ${username}`);
-        }
-
-        function joinAI() {
-            username = document.getElementById('ai_name_input').value;
-            if (!username) { alert('Enter a name'); return; }
-            const difficulty = document.getElementById('ai_difficulty_select').value;
-            alert(`Starting practice vs ${difficulty} AI as ${username}`);
-        }
-
         // Default to multiplayer
         selectMode('multiplayer');
+
+        // Initialize Payment Widget
+        if (typeof PaymentWidget !== 'undefined') {
+            PaymentWidget.init({
+                gameId: 'castle-go',
+                gameName: 'Castle-Go',
+                features: ['premium_pass', 'battle_pass', 'supporter'],
+                container: '#payment-widget-container',
+                onSuccess: (purchase) => {
+                    console.log('Castle-Go purchase:', purchase);
+                    updatePremiumStatus();
+                }
+            });
+        }
+
+        function updatePremiumStatus() {
+            // Check if premium is active
+            const statusLabel = document.getElementById('premium_status_label');
+            statusLabel.innerText = 'Premium Active ✓';
+            statusLabel.className = 'text-xs text-purple-400 mt-1 font-bold';
+            
+            // Hide ads for premium users
+            document.querySelectorAll('.free-only').forEach(el => el.classList.add('hidden'));
+        }
     </script>
+
+    <!-- Database communications layer -->
+    <script src="database.js"></script>
+
+    <!-- Python game engine and AI -->
+    <script type="py" src="ai_easy.py"></script>
+    <script type="py" src="ai_medium.py"></script>
+    <script type="py" src="game-engine.py"></script>
+
 </body>
 </html>
