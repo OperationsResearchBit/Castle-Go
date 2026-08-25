@@ -13,7 +13,7 @@
 
 window.STRIPE_CONFIG = {
     // Your Stripe publishable key (found in Stripe Dashboard → Developers → API Keys)
-    publishableKey: 'pk_test_YOUR_STRIPE_PUBLISHABLE_KEY_HERE',
+    publishableKey: 'pk_live_51RjdAFD5DIRlK8ujDGRN414988CRZoTFvLklCD4LbkHrtq0gvdh6w563TfmGbBj6ZIKQoKNJqJZwykIyffCmhKD400s71BIyMu',
     
     // Game-specific configuration
     gameId: 'castle-go',
