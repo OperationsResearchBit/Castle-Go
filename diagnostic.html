@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Stripe Integration Diagnostic</title>
+    <style>
+        body { font-family: monospace; background: #1a1a1a; color: #ccc; padding: 20px; }
+        .pass { color: #4ade80; }
+        .fail { color: #f87171; }
+        .warn { color: #facc15; }
+        .section { margin: 20px 0; border: 1px solid #444; padding: 15px; border-radius: 8px; }
+        h2 { margin-top: 0; }
+        pre { background: #000; padding: 10px; overflow-x: auto; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Stripe Integration Diagnostic</h1>
+    
+    <div class="section">
+        <h2>1. Check Stripe Config File</h2>
+        <div id="config-status"></div>
+    </div>
+
+    <div class="section">
+        <h2>2. Check PaymentWidget Script</h2>
+        <div id="widget-status"></div>
+    </div>
+
+    <div class="section">
+        <h2>3. Stripe Config Contents</h2>
+        <pre id="config-contents">Loading...</pre>
+    </div>
+
+    <div class="section">
+        <h2>4. Console Output</h2>
+        <pre id="console-log">Check browser DevTools (F12) for errors</pre>
+    </div>
+
+    <script src="stripe-config.js"></script>
+    <script src="https://operationsresearchbit.github.io/PaymentsCart/payment-widget.js"></script>
+
+    <script>
+        // Capture console logs
+        const logs = [];
+        const originalLog = console.log;
+        const originalError = console.error;
+        console.log = (...args) => {
+            logs.push('✓ ' + args.join(' '));
+            originalLog(...args);
+        };
+        console.error = (...args) => {
+            logs.push('✗ ' + args.join(' '));
+            originalError(...args);
+        };
+
+        // Test 1: Check Stripe Config
+        setTimeout(() => {
+            const configDiv = document.getElementById('config-status');
+            if (typeof window.STRIPE_CONFIG !== 'undefined') {
+                configDiv.innerHTML = '<span class="pass">✅ stripe-config.js loaded</span>';
+            } else {
+                configDiv.innerHTML = '<span class="fail">❌ stripe-config.js NOT found</span>';
+            }
+        }, 500);
+
+        // Test 2: Check PaymentWidget
+        setTimeout(() => {
+            const widgetDiv = document.getElementById('widget-status');
+            if (typeof PaymentWidget !== 'undefined') {
+                widgetDiv.innerHTML = '<span class="pass">✅ PaymentWidget script loaded</span>';
+            } else {
+                widgetDiv.innerHTML = '<span class="fail">❌ PaymentWidget script NOT loaded</span><br><span class="warn">Check: https://operationsresearchbit.github.io/PaymentsCart/payment-widget.js</span>';
+            }
+        }, 1000);
+
+        // Test 3: Show config contents
+        setTimeout(() => {
+            const contentsDiv = document.getElementById('config-contents');
+            if (window.STRIPE_CONFIG) {
+                const config = window.STRIPE_CONFIG;
+                let html = '';
+                html += `gameId: ${config.gameId}\n`;
+                html += `gameName: ${config.gameName}\n`;
+                html += `publishableKey: ${config.publishableKey}\n`;
+                if (config.publishableKey.includes('YOUR_')) {
+                    html += '\n⚠️ WARNING: Stripe key is still a placeholder!\n';
+                    html += '   Replace it in stripe-config.js with your real key from:\n';
+                    html += '   https://dashboard.stripe.com/developers/api';
+                }
+                contentsDiv.textContent = html;
+            } else {
+                contentsDiv.textContent = 'STRIPE_CONFIG not found!';
+            }
+        }, 1000);
+
+        // Test 4: Show console logs
+        setTimeout(() => {
+            const consoleDiv = document.getElementById('console-log');
+            if (logs.length > 0) {
+                consoleDiv.textContent = logs.join('\n');
+            } else {
+                consoleDiv.textContent = '(No console output yet)';
+            }
+        }, 2000);
+
+        // Run tests
+        console.log('Running diagnostics...');
+        console.log('Current URL:', window.location.href);
+        console.log('Checking files...');
+    </script>
+</body>
+</html>
