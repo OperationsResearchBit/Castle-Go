@@ -11,6 +11,8 @@
     <script type="module" src="https://pyscript.net/releases/2024.11.1/core.js"></script>
     <!-- Supabase JS client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Stripe Configuration (API keys) -->
+    <script src="stripe-config.js"></script>
     <!-- Payment Widget Integration -->
     <script src="https://operationsresearchbit.github.io/PaymentsCart/payment-widget.js"></script>
 </head>
@@ -202,16 +204,22 @@
         // Default to multiplayer
         selectMode('multiplayer');
 
-        // Initialize Payment Widget
-        if (typeof PaymentWidget !== 'undefined') {
+        // Initialize Payment Widget with Stripe config
+        if (typeof PaymentWidget !== 'undefined' && window.STRIPE_CONFIG) {
             PaymentWidget.init({
-                gameId: 'castle-go',
-                gameName: 'Castle-Go',
-                features: ['premium_pass', 'battle_pass', 'supporter'],
-                container: '#payment-widget-container',
+                gameId: window.STRIPE_CONFIG.gameId,
+                gameName: window.STRIPE_CONFIG.gameName,
+                publishableKey: window.STRIPE_CONFIG.publishableKey,
+                features: window.STRIPE_CONFIG.paymentWidgetConfig.features,
+                container: window.STRIPE_CONFIG.paymentWidgetConfig.container,
                 onSuccess: (purchase) => {
-                    console.log('Castle-Go purchase:', purchase);
+                    console.log('Purchase successful:', purchase);
                     updatePremiumStatus();
+                    window.STRIPE_CONFIG.onPaymentSuccess(purchase);
+                },
+                onError: (error) => {
+                    console.error('Payment error:', error);
+                    window.STRIPE_CONFIG.onPaymentError(error);
                 }
             });
         }
