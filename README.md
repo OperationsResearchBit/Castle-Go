@@ -1,6 +1,6 @@
 # Castle-Go
 Castle Go game:  
-https://operationsresearchbit.github.io/Castle-Go/
+https://operationsresearchbit.github.io/Castle-Go/web/index.html
 
 agpl3 license
 
