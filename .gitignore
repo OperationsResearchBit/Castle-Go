@@ -1,0 +1,5 @@
+server/.venv/
+mobile/node_modules/
+mobile/android/app/src/main/assets/public/
+__pycache__/
+*.pyc
